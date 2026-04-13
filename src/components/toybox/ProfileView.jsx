@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Grid3X3, MapPin, Package, Pencil, UserPlus } from "lucide-react";
+import { Grid3X3, MapPin, MessageCircle, Package, Pencil, UserPlus } from "lucide-react";
 import { profileInitials } from "@/lib/profile";
+import { useChatWidget } from "@/contexts/ChatWidgetContext";
 
 export function ProfileGridThumb({ href, imageUrl, title, subtitle, isLocal }) {
   return (
@@ -42,6 +43,7 @@ export function ProfileGridThumb({ href, imageUrl, title, subtitle, isLocal }) {
  */
 export default function ProfileView({ profile, listedToys, exchanged, isSelf }) {
   const [tab, setTab] = useState("listed");
+  const { openWidgetForPeerUsername } = useChatWidget();
 
   const coverUrl = profile.avatarUrl;
   const isLocalAvatar =
@@ -122,15 +124,25 @@ export default function ProfileView({ profile, listedToys, exchanged, isSelf }) 
             Edit profile
           </Link>
         ) : (
-          <button
-            type="button"
-            disabled
-            title="Coming soon"
-            className="mt-6 inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-slate-200 bg-white px-8 py-2.5 text-sm font-bold text-slate-400 shadow-sm"
-          >
-            <UserPlus className="h-4 w-4 text-slate-400" aria-hidden />
-            Follow
-          </button>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              disabled
+              title="Coming soon"
+              className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-slate-200 bg-white px-8 py-2.5 text-sm font-bold text-slate-400 shadow-sm"
+            >
+              <UserPlus className="h-4 w-4 text-slate-400" aria-hidden />
+              Follow
+            </button>
+            <button
+              type="button"
+              onClick={() => openWidgetForPeerUsername(profile.username)}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-8 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition-colors hover:border-[#B2EBF2] hover:bg-[#e0f7fa]/40"
+            >
+              <MessageCircle className="h-4 w-4 text-[#00C4D9]" aria-hidden />
+              Message
+            </button>
+          </div>
         )}
       </div>
 

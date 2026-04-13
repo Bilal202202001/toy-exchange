@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChatWidgetProvider } from "@/contexts/ChatWidgetContext";
+import GlobalChatWidget from "@/components/toybox/GlobalChatWidget";
 import { useEffect, useRef, useState } from "react";
 import {
   Home,
@@ -49,6 +51,7 @@ export default function DashboardShell({ children }) {
   };
 
   return (
+    <ChatWidgetProvider>
     <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#F8FAFC] font-sans lg:h-screen lg:flex-row">
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -224,5 +227,7 @@ export default function DashboardShell({ children }) {
         </main>
       </div>
     </div>
+    <GlobalChatWidget />
+    </ChatWidgetProvider>
   );
 }

@@ -126,3 +126,49 @@ export const outgoingRequestsMock = [
     status: "declined",
   },
 ];
+
+/** Initial thread per outgoing request id (you messaging the seller). */
+export const outgoingRequestsChatSeed = {
+  "req-out-1": [
+    {
+      id: "o1",
+      from: "me",
+      body: "Perfect for our toddler—thanks for listing!",
+      time: "2026-04-11T10:00:00",
+    },
+    {
+      id: "o2",
+      from: "them",
+      body: "Glad it helps! Pickup in Portland NE works for us.",
+      time: "2026-04-11T10:18:00",
+    },
+  ],
+  "req-out-2": [
+    {
+      id: "o1",
+      from: "me",
+      body: "Is the seat adjustable for a tall 3-year-old?",
+      time: "2026-04-06T14:00:00",
+    },
+    {
+      id: "o2",
+      from: "them",
+      body: "Yes—three height slots. I can send a quick photo.",
+      time: "2026-04-06T14:22:00",
+    },
+  ],
+  "req-out-3": [
+    {
+      id: "o1",
+      from: "me",
+      body: "Interested in the strategy titles if still available.",
+      time: "2026-04-03T09:00:00",
+    },
+    {
+      id: "o2",
+      from: "them",
+      body: "Sorry, those were claimed last week.",
+      time: "2026-04-03T09:30:00",
+    },
+  ],
+};
