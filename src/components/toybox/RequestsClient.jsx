@@ -218,7 +218,16 @@ export default function RequestsClient() {
                       <StatusBadge status={req.status} />
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
-                      <span className="font-semibold text-slate-800">{req.requesterName}</span>
+                      {req.requesterUsername ? (
+                        <Link
+                          href={`/toybox/profile/${req.requesterUsername}`}
+                          className="font-semibold text-slate-800 underline-offset-2 hover:text-[#00ACC1] hover:underline"
+                        >
+                          {req.requesterName}
+                        </Link>
+                      ) : (
+                        <span className="font-semibold text-slate-800">{req.requesterName}</span>
+                      )}
                       <span className="hidden text-slate-300 sm:inline" aria-hidden>
                         ·
                       </span>
@@ -309,7 +318,16 @@ export default function RequestsClient() {
                         </Link>
                         <p className="mt-1 text-sm text-slate-600">
                           Listed by{" "}
-                          <span className="font-semibold text-slate-800">{req.sellerName}</span>
+                          {req.sellerUsername ? (
+                            <Link
+                              href={`/toybox/profile/${req.sellerUsername}`}
+                              className="font-semibold text-slate-800 underline-offset-2 hover:text-[#00ACC1] hover:underline"
+                            >
+                              {req.sellerName}
+                            </Link>
+                          ) : (
+                            <span className="font-semibold text-slate-800">{req.sellerName}</span>
+                          )}
                           <span className="text-slate-400"> · </span>
                           {req.sellerLocation}
                         </p>
@@ -360,7 +378,16 @@ export default function RequestsClient() {
             <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
               <div className="min-w-0">
                 <h2 id="chat-dialog-title" className="truncate text-lg font-bold text-slate-900">
-                  {chatOpen.requesterName}
+                  {chatOpen.requesterUsername ? (
+                    <Link
+                      href={`/toybox/profile/${chatOpen.requesterUsername}`}
+                      className="hover:text-[#00ACC1] hover:underline"
+                    >
+                      {chatOpen.requesterName}
+                    </Link>
+                  ) : (
+                    chatOpen.requesterName
+                  )}
                 </h2>
                 <p className="mt-0.5 truncate text-sm text-slate-500">
                   About: {chatOpen.toyTitle}

@@ -37,19 +37,20 @@ function StarRating({ value }) {
 }
 
 export default function ToyListingCard({ listing }) {
-  const { id, title, listedBy, listedOn, rating, location } = listing;
+  const { id, title, listedBy, listedOn, rating, location, ownerUsername } = listing;
   const coverUrl = listing.images?.[0] ?? listing.imageUrl;
   const isLocalImage =
     typeof coverUrl === "string" &&
     (coverUrl.startsWith("blob:") || coverUrl.startsWith("data:"));
 
+  const profileHref = ownerUsername ? `/toybox/profile/${ownerUsername}` : null;
+
   return (
-    <Link
-      href={`/toybox/${id}`}
-      className="group flex max-w-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm outline-none transition-shadow hover:shadow-md hover:shadow-slate-200/80 focus-visible:ring-2 focus-visible:ring-[#00C4D9] focus-visible:ring-offset-2"
-    >
-      {/* Flatter image (16:9): lower height than 4:3; card width is ~⅓ row so image stays modest */}
-      <div className="relative w-full overflow-hidden rounded-xl bg-slate-100">
+    <article className="group flex max-w-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm outline-none transition-shadow hover:shadow-md hover:shadow-slate-200/80 focus-within:ring-2 focus-within:ring-[#00C4D9] focus-within:ring-offset-2">
+      <Link
+        href={`/toybox/${id}`}
+        className="relative block w-full overflow-hidden rounded-xl bg-slate-100"
+      >
         <div className="relative aspect-[16/9] w-full">
           <Image
             src={coverUrl}
@@ -60,17 +61,33 @@ export default function ToyListingCard({ listing }) {
             sizes="(max-width: 768px) 100vw, 33vw"
           />
         </div>
-      </div>
+      </Link>
 
       <div className="flex flex-1 flex-col gap-2.5 p-3 sm:p-4">
-        <h2 className="line-clamp-2 text-base font-bold leading-snug text-slate-800">{title}</h2>
+        <Link
+          href={`/toybox/${id}`}
+          className="line-clamp-2 text-base font-bold leading-snug text-slate-800 transition-colors hover:text-[#00ACC1]"
+        >
+          {title}
+        </Link>
 
         <div className="grid grid-cols-2 gap-x-2 gap-y-2.5 text-xs sm:text-sm">
           <div className="flex min-w-0 items-center gap-1.5">
             <User className="h-3.5 w-3.5 shrink-0 text-[#00C4D9] sm:h-4 sm:w-4" aria-hidden />
-            <span className="truncate font-semibold text-slate-800" title={listedBy}>
-              {listedBy}
-            </span>
+            {profileHref ? (
+              <Link
+                href={profileHref}
+                className="truncate font-semibold text-slate-800 underline-offset-2 hover:text-[#00ACC1] hover:underline"
+                title={listedBy}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {listedBy}
+              </Link>
+            ) : (
+              <span className="truncate font-semibold text-slate-800" title={listedBy}>
+                {listedBy}
+              </span>
+            )}
           </div>
           <div className="flex min-w-0 items-center justify-end">
             <StarRating value={rating} />
@@ -88,6 +105,6 @@ export default function ToyListingCard({ listing }) {
           </div>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }

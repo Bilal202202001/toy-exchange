@@ -49,7 +49,7 @@ export default function DashboardShell({ children }) {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F8FAFC] font-sans lg:h-screen lg:min-h-0 lg:flex-row lg:overflow-hidden">
+    <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#F8FAFC] font-sans lg:h-screen lg:flex-row">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <button
@@ -138,9 +138,9 @@ export default function DashboardShell({ children }) {
         </div>
       </aside>
 
-      {/* Main column — header fixed to top of this column; only main scrolls */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-hidden">
-        <header className="z-30 w-full shrink-0 border-b border-slate-100 bg-white/90 shadow-sm backdrop-blur-md">
+      {/* Main column — sticky header on mobile; only main scrolls */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:min-h-0">
+        <header className="sticky top-0 z-40 w-full shrink-0 border-b border-slate-100 bg-white/95 shadow-sm backdrop-blur-md lg:relative lg:z-30">
           <div className="flex h-16 w-full min-w-0 items-center gap-3 px-4 sm:gap-4 sm:px-6 lg:h-[4.5rem] lg:px-8">
             <button
               type="button"

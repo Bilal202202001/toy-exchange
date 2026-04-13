@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Upload, X } from "lucide-react";
 import { addMyToy } from "@/lib/myToyListings";
+import { loadProfile } from "@/lib/profile";
 
 const emptyForm = () => ({
   title: "",
@@ -62,12 +63,14 @@ export default function AddToyFormClient() {
 
     const id = `mine-${Date.now()}`;
     const listedOn = new Date().toISOString().slice(0, 10);
+    const { username } = loadProfile();
     const toy = {
       id,
       title: form.title.trim(),
       imageUrl: imagePreviews[0],
       images: [...imagePreviews],
       listedBy: "You",
+      ownerUsername: username,
       listedOn,
       rating: 5,
       location: form.location.trim() || "—",

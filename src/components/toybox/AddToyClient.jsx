@@ -59,7 +59,7 @@ export default function AddToyClient() {
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold text-slate-800 sm:text-3xl">My Toys</h1>
           <p className="mt-2 text-slate-500">
-            Listings you&apos;ve published (saved in this browser). Use{" "}
+            Listings you&apos;ve published,Use{" "}
             <span className="font-medium text-slate-600">Add toy</span> to open the form on a
             separate page.
           </p>

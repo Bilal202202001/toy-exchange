@@ -44,6 +44,7 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
     title,
     images,
     listedBy,
+    ownerUsername,
     listedOn,
     rating,
     location,
@@ -137,7 +138,16 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
                     Listed by
                   </p>
-                  <p className="mt-0.5 font-semibold text-slate-800">{listedBy}</p>
+                  {ownerUsername ? (
+                    <Link
+                      href={`/toybox/profile/${ownerUsername}`}
+                      className="mt-0.5 inline-block font-semibold text-slate-800 underline-offset-2 hover:text-[#00ACC1] hover:underline"
+                    >
+                      {listedBy}
+                    </Link>
+                  ) : (
+                    <p className="mt-0.5 font-semibold text-slate-800">{listedBy}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-start gap-3">

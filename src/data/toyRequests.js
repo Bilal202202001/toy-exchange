@@ -9,6 +9,7 @@ export const incomingRequestsMock = [
     imageUrl:
       "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=200&h=200&fit=crop",
     requesterName: "Sarah M.",
+    requesterUsername: "sarah_m",
     requesterLocation: "Austin, TX",
     message:
       "Hi! We’re looking for a train set for our 4-year-old. Happy to swap one of our board games if you’re interested.",
@@ -22,6 +23,7 @@ export const incomingRequestsMock = [
     imageUrl:
       "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=200&h=200&fit=crop",
     requesterName: "The Chen family",
+    requesterUsername: "chen_family",
     requesterLocation: "Seattle, WA",
     message: "Could we pick up this weekend? Our kids are building a big city project.",
     requestedAt: "2026-04-08",
@@ -34,6 +36,7 @@ export const incomingRequestsMock = [
     imageUrl:
       "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=200&h=200&fit=crop",
     requesterName: "James K.",
+    requesterUsername: "james_k",
     requesterLocation: "Portland, OR",
     message: "",
     requestedAt: "2026-04-05",
@@ -90,6 +93,7 @@ export const outgoingRequestsMock = [
     imageUrl:
       "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=200&h=200&fit=crop",
     sellerName: "James K.",
+    sellerUsername: "james_k",
     sellerLocation: "Portland, OR",
     message: "Perfect for our toddler—thanks for listing!",
     requestedAt: "2026-04-11",
@@ -102,6 +106,7 @@ export const outgoingRequestsMock = [
     imageUrl:
       "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=200&h=200&fit=crop",
     sellerName: "Maria L.",
+    sellerUsername: "maria_l",
     sellerLocation: "Denver, CO",
     message: "",
     requestedAt: "2026-04-06",
@@ -114,6 +119,7 @@ export const outgoingRequestsMock = [
     imageUrl:
       "https://images.unsplash.com/photo-1606503153255-59d8b8b82276?w=200&h=200&fit=crop",
     sellerName: "David R.",
+    sellerUsername: "david_r",
     sellerLocation: "Chicago, IL",
     message: "Interested in the strategy titles if still available.",
     requestedAt: "2026-04-03",
