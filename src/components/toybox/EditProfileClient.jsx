@@ -1,10 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Camera } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import {
+  EmailInput,
+  SingleImageInput,
+  TextareaInput,
+  TextInput,
+  formButtonPrimaryClass,
+  formButtonSecondaryClass,
+  formCardClass,
+  formSubtitleClass,
+  formTitleClass,
+} from "@/components/inputs";
 import {
   defaultProfile,
   loadProfile,
@@ -37,16 +47,17 @@ export default function EditProfileClient() {
     router.push("/toybox/profile");
   };
 
-  const onAvatarPick = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const onAvatarFile = (file) => {
+    if (!file) {
+      setForm((f) => ({ ...f, avatarUrl: "" }));
+      return;
+    }
     const reader = new FileReader();
     reader.onloadend = () => {
       const url = typeof reader.result === "string" ? reader.result : null;
-      setForm((f) => ({ ...f, avatarUrl: url }));
+      setForm((f) => ({ ...f, avatarUrl: url ?? "" }));
     };
     reader.readAsDataURL(file);
-    e.target.value = "";
   };
 
   const handleCancel = () => {
@@ -69,144 +80,100 @@ export default function EditProfileClient() {
         Back to profile
       </Link>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white py-4 shadow-sm sm:py-5 lg:py-6 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <div className={formCardClass}>
         <div className="shrink-0 border-b border-slate-100 pb-3">
-          <h1 className="text-lg font-bold text-slate-900 sm:text-xl">Edit profile</h1>
-          <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
+          <h1 className={formTitleClass}>Edit profile</h1>
+          <p className={formSubtitleClass}>
             Update how you appear to other families on ToyBox.
           </p>
         </div>
 
         <form
           onSubmit={handleSaveProfile}
-          className="mt-4 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto lg:overflow-y-auto lg:pr-1"
+          className="mt-4 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto lg:overflow-y-auto lg:pr-1"
         >
-          <div className="flex flex-col items-center gap-3">
-            <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-[#e0f7fa] bg-slate-100">
-              {form.avatarUrl ? (
-                <Image
-                  src={form.avatarUrl}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  unoptimized={
-                    typeof form.avatarUrl === "string" &&
-                    (form.avatarUrl.startsWith("blob:") ||
-                      form.avatarUrl.startsWith("data:"))
-                  }
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#80deea] to-[#00C4D9] text-2xl font-bold text-white">
-                  {profileInitials(form.displayName)}
-                </div>
-              )}
-            </div>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e0f7fa]/50">
-              <Camera className="h-4 w-4 text-[#00C4D9]" />
-              Change photo
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={onAvatarPick}
-              />
-            </label>
-          </div>
+          <SingleImageInput
+            id="edit-profile-avatar"
+            name="avatar"
+            label="Profile photo"
+            variant="avatar"
+            accept="image/*"
+            maxSizeBytes={5 * 1024 * 1024}
+            remotePreviewUrl={form.avatarUrl || undefined}
+            avatarFallback={profileInitials(form.displayName)}
+            onFileChange={onAvatarFile}
+          />
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                Display name
-              </label>
-              <input
-                required
-                value={form.displayName}
-                onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 outline-none focus:border-[#00C4D9] focus:bg-white focus:ring-4 focus:ring-[#e0f7fa]"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                Username
-              </label>
-              <div className="relative mt-2">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                  @
-                </span>
-                <input
-                  value={form.username}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, username: slugifyUsername(e.target.value) }))
-                  }
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-8 pr-4 text-slate-800 outline-none focus:border-[#00C4D9] focus:bg-white focus:ring-4 focus:ring-[#e0f7fa]"
-                  placeholder="username"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-              Bio
-            </label>
-            <textarea
-              value={form.bio}
-              onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-              rows={3}
-              className="mt-2 w-full resize-y rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 outline-none focus:border-[#00C4D9] focus:bg-white focus:ring-4 focus:ring-[#e0f7fa]"
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextInput
+              id="edit-profile-display-name"
+              name="displayName"
+              label="Display name"
+              required
+              value={form.displayName}
+              onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
+              autoComplete="name"
+            />
+            <TextInput
+              id="edit-profile-username"
+              name="username"
+              label="Username"
+              prefix="@"
+              value={form.username}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, username: slugifyUsername(e.target.value) }))
+              }
+              placeholder="username"
+              autoComplete="username"
             />
           </div>
 
-          <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-              Location
-            </label>
-            <input
-              value={form.location}
-              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 outline-none focus:border-[#00C4D9] focus:bg-white focus:ring-4 focus:ring-[#e0f7fa]"
-              placeholder="City, region"
+          <TextareaInput
+            id="edit-profile-bio"
+            name="bio"
+            label="Bio"
+            rows={3}
+            value={form.bio}
+            onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+            className="resize-y"
+          />
+
+          <TextInput
+            id="edit-profile-location"
+            name="location"
+            label="Location"
+            value={form.location}
+            onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+            placeholder="City, region"
+            autoComplete="address-level2"
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <EmailInput
+              id="edit-profile-email"
+              name="email"
+              label="Email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              autoComplete="email"
+            />
+            <TextInput
+              id="edit-profile-phone"
+              name="phone"
+              label="Phone"
+              type="tel"
+              inputMode="tel"
+              value={form.phone}
+              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              autoComplete="tel"
             />
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                Email
-              </label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 outline-none focus:border-[#00C4D9] focus:bg-white focus:ring-4 focus:ring-[#e0f7fa]"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                Phone
-              </label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 outline-none focus:border-[#00C4D9] focus:bg-white focus:ring-4 focus:ring-[#e0f7fa]"
-              />
-            </div>
-          </div>
-
-          <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
+          <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:justify-end sm:gap-3">
+            <button type="button" onClick={handleCancel} className={formButtonSecondaryClass}>
               Cancel
             </button>
-            <button
-              type="submit"
-              className="rounded-2xl bg-[#00C4D9] px-8 py-3 text-sm font-bold text-white shadow-[0_12px_28px_rgba(0,196,217,0.35)] hover:bg-[#00ACC1]"
-            >
+            <button type="submit" className={formButtonPrimaryClass}>
               Save
             </button>
           </div>

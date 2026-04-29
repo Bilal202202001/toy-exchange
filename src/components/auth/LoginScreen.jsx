@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Car, Mail, EyeOff, ArrowRight } from "lucide-react";
+import { Car, ArrowRight } from "lucide-react";
+import { EmailInput, PasswordInput } from "@/components/inputs";
 
 const LOGIN_EMAIL = "sabahat_hussain@gmail.com";
 const LOGIN_PASSWORD = "sabahat@123";
@@ -105,42 +106,24 @@ export default function LoginScreen({ onNavigate }) {
             </button>
           </div>
 
-          <form className="flex flex-col gap-6" onSubmit={handleLogin} noValidate>
-            <div className="space-y-2">
-              <label className="ml-1 text-xs font-bold uppercase tracking-widest text-slate-600">
-                Email Address
-              </label>
-              <div className="group relative">
-                <input
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.com"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-4 pl-5 pr-12 text-base outline-none transition-all placeholder:text-slate-400 focus:border-[#00C4D9] focus:bg-white focus:ring-4 focus:ring-[#e0f7fa]"
-                />
-                <Mail className="absolute right-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#00C4D9]" />
-              </div>
-            </div>
+          <form className="flex flex-col gap-4" onSubmit={handleLogin} noValidate>
+            <EmailInput
+              label="Email address"
+              name="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@company.com"
+            />
 
-            <div className="space-y-2">
-              <label className="ml-1 text-xs font-bold uppercase tracking-widest text-slate-600">
-                Password
-              </label>
-              <div className="group relative">
-                <input
-                  type="password"
-                  name="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-4 pl-5 pr-12 text-base outline-none transition-all placeholder:text-slate-400 focus:border-[#00C4D9] focus:bg-white focus:ring-4 focus:ring-[#e0f7fa]"
-                />
-                <EyeOff className="absolute right-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#00C4D9]" />
-              </div>
-            </div>
+            <PasswordInput
+              label="Password"
+              name="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
 
             {error ? (
               <p className="text-sm font-medium text-red-600" role="alert">
@@ -159,7 +142,7 @@ export default function LoginScreen({ onNavigate }) {
 
             <button
               type="submit"
-              className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#00C4D9] py-4 text-lg font-bold text-white shadow-[0_20px_40px_rgba(0,196,217,0.25)] transition-all hover:bg-[#00ACC1] active:scale-[0.98]"
+              className="mt-2 inline-flex w-full items-center justify-center gap-3 rounded-xl bg-[#00C4D9] py-3.5 text-base font-bold text-white shadow-[0_20px_40px_rgba(0,196,217,0.25)] transition-all hover:bg-[#00ACC1] active:scale-[0.98]"
             >
               Login
               <ArrowRight className="h-6 w-6" />
