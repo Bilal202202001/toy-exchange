@@ -7,7 +7,8 @@ import GlobalChatWidget from "@/components/toybox/GlobalChatWidget";
 import { useEffect, useRef, useState } from "react";
 import {
   Home,
-  PlusCircle,
+  CirclePlus,
+  Package,
   Inbox,
   User,
   Search,
@@ -20,7 +21,8 @@ import {
 
 const nav = [
   { href: "/toybox", label: "Home", icon: Home },
-  { href: "/toybox/my-toys", label: "My Toys", icon: PlusCircle },
+  { href: "/toybox/my-toys/add", label: "Add Toy", icon: CirclePlus },
+  { href: "/toybox/my-toys", label: "My Toys", icon: Package },
   { href: "/toybox/requests", label: "Requests", icon: Inbox },
   { href: "/toybox/profile", label: "Profile", icon: User },
 ];
@@ -49,6 +51,10 @@ export default function DashboardShell({ children }) {
     setProfileOpen(false);
     window.location.href = "/";
   };
+
+  if (pathname === "/toybox/request-sent") {
+    return <>{children}</>;
+  }
 
   return (
     <ChatWidgetProvider>
@@ -111,11 +117,29 @@ export default function DashboardShell({ children }) {
             const third = pathname.split("/")[2];
             const isListingDetail =
               Boolean(third) &&
-              !["my-toys", "requests", "profile"].includes(third);
-            const active =
-              href === "/toybox"
-                ? pathname === "/toybox" || isListingDetail
-                : pathname === href || pathname.startsWith(`${href}/`);
+              ![
+                "my-toys",
+                "requests",
+                "profile",
+                "request-sent",
+                "exchange-proposal",
+              ].includes(third);
+
+            let active = false;
+            if (href === "/toybox") {
+              active = pathname === "/toybox" || isListingDetail;
+            } else if (href === "/toybox/my-toys/add") {
+              active = pathname === "/toybox/my-toys/add";
+            } else if (href === "/toybox/my-toys") {
+              active =
+                pathname === "/toybox/my-toys" ||
+                (pathname.startsWith("/toybox/my-toys/") &&
+                  pathname !== "/toybox/my-toys/add");
+            } else {
+              active =
+                pathname === href || pathname.startsWith(`${href}/`);
+            }
+
             return (
               <Link
                 key={href}

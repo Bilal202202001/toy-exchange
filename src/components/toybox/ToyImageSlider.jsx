@@ -4,7 +4,12 @@ import Image from "next/image";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function ToyImageSlider({ images, title }) {
+export default function ToyImageSlider({
+  images,
+  title,
+  aspectClassName = "aspect-[16/9]",
+  roundedClassName = "rounded-2xl",
+}) {
   const [index, setIndex] = useState(0);
   const safeImages = images?.length ? images : [];
   const n = safeImages.length;
@@ -18,15 +23,19 @@ export default function ToyImageSlider({ images, title }) {
 
   if (!n) {
     return (
-      <div className="flex aspect-[16/9] w-full items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+      <div
+        className={`flex ${aspectClassName} w-full items-center justify-center bg-slate-100 text-slate-400 ${roundedClassName}`}
+      >
         No images
       </div>
     );
   }
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl bg-slate-100">
-      <div className="relative aspect-[16/9] w-full">
+    <div
+      className={`relative w-full overflow-hidden bg-slate-100 ${roundedClassName}`}
+    >
+      <div className={`relative w-full ${aspectClassName}`}>
         <Image
           key={current}
           src={current}

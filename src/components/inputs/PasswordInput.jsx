@@ -24,6 +24,8 @@ const PasswordInput = forwardRef(function PasswordInput(
     maxLength,
     autoComplete = "current-password",
     showToggle = true,
+    toggleVariant = "lucide",
+    toggleButtonClassName = "",
     className = "",
     innerWrapperClassName = "",
     ariaLabel,
@@ -34,7 +36,7 @@ const PasswordInput = forwardRef(function PasswordInput(
 ) {
   const id = useFieldId(idProp);
   const [visible, setVisible] = useState(false);
-  const inputClass = `${inputBaseClass} ${showToggle ? "pr-11" : ""} ${label ? fieldGapClass : ""} ${className}`.trim();
+  const inputClass = `${inputBaseClass} ${showToggle ? (toggleVariant === "material" ? "pr-12" : "pr-11") : ""} ${label ? fieldGapClass : ""} ${className}`.trim();
 
   const inner = (
     <div className={`relative w-full min-w-0 ${innerWrapperClassName}`.trim()}>
@@ -65,10 +67,22 @@ const PasswordInput = forwardRef(function PasswordInput(
           tabIndex={-1}
           disabled={disabled}
           onClick={() => setVisible((v) => !v)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 disabled:pointer-events-none"
+          className={
+            toggleVariant === "material"
+              ? `absolute right-4 top-1/2 flex -translate-y-1/2 items-center text-slate-400 transition-colors hover:text-slate-600 disabled:pointer-events-none dark:hover:text-slate-200 ${toggleButtonClassName}`.trim()
+              : `absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 disabled:pointer-events-none ${toggleButtonClassName}`.trim()
+          }
           aria-label={visible ? "Hide password" : "Show password"}
         >
-          {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {toggleVariant === "material" ? (
+            <span className="material-symbols-outlined text-[22px] leading-none">
+              {visible ? "visibility" : "visibility_off"}
+            </span>
+          ) : visible ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
         </button>
       )}
     </div>

@@ -31,7 +31,7 @@ export default function AuthFlow() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC] font-sans flex items-center justify-center overflow-hidden">
+    <div className="flex min-h-screen w-full items-center justify-center overflow-hidden bg-auth-bg font-sans dark:bg-auth-bg-dark">
       <div
         className={`w-full h-full transition-opacity duration-300 ease-in-out ${isVisible ? "opacity-100" : "opacity-0"}`}
       >

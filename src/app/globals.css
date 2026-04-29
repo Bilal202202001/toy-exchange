@@ -10,6 +10,38 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-plus-jakarta-sans);
+
+  --color-primary: #30bae8;
+  --color-background-light: #f6f7f8;
+  --color-background-dark: #111d21;
+
+  /* Auth login (soft pastel blue — matches design mock) */
+  --color-auth-primary: #93c5fd;
+  --color-auth-primary-dark: #60a5fa;
+  --color-auth-bg: #f8fafc;
+  --color-auth-bg-dark: #0f172a;
+
+  --radius-default: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* Signup flow (screens match design mock — #63a6e9 primary) */
+  --color-signup-primary: #63a6e9;
+  --color-signup-bg: #f6f7f8;
+  --color-signup-bg-dark: #111921;
+  --color-signup-surface: #ffffff;
+  --color-signup-surface-dark: #1a2632;
+
+  /* Add toy form (matches design mock) */
+  --color-add-toy-primary: #2b8cee;
+  --color-add-toy-bg: #f6f7f8;
+  --color-add-toy-bg-dark: #101922;
+
+  /* Request-sent success screen */
+  --color-request-sent-primary: #0657f9;
+  --color-request-sent-bg: #f5f6f8;
+  --color-request-sent-bg-dark: #0f1623;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +55,82 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Splash / loading screen (matches mobile web view design) */
+.splash-gradient {
+  background: linear-gradient(180deg, #e0f7fa 0%, #b2ebf2 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .splash-gradient {
+    background: linear-gradient(180deg, #111d21 0%, #1e333a 100%);
+  }
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 44px);
+}
+
+@keyframes splash-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-splash-fade-in-up {
+  animation: splash-fade-in-up 0.65s ease-out forwards;
+}
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined", sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Signup / profile steps — hide scrollbars on overflow areas */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Thin scrollbar (exchange proposal, etc.) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+/* Material symbol “filled” variant for add-toy UI */
+.filled-icon {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
 }

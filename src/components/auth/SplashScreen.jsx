@@ -1,64 +1,69 @@
 export default function SplashScreen() {
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#e0f7fa] via-[#b2ebf2] to-[#80deea] relative">
-      {/* Decorative background elements for desktop */}
-      <div className="absolute top-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-white/20 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-[30vw] h-[30vw] bg-[#00C4D9]/10 rounded-full blur-3xl"></div>
+    <div
+      className="pointer-events-none fixed inset-0 z-10 flex h-full max-h-none min-h-[max(884px,100dvh)] w-full select-none flex-col items-center overflow-hidden splash-gradient antialiased [font-family:var(--font-plus-jakarta-sans,sans-serif)] text-slate-900 dark:text-slate-100"
+    >
+      {/* Background decorative blobs */}
+      <div
+        aria-hidden
+        className="absolute left-[-10%] top-[-10%] h-64 w-64 rounded-full bg-primary/10 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="absolute bottom-[-5%] right-[-10%] h-80 w-80 rounded-full bg-primary/20 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="absolute right-[10%] top-[20%] h-32 w-32 rounded-full bg-yellow-200/40 blur-2xl dark:bg-yellow-200/15"
+      />
 
-      <div className="flex flex-col items-center justify-center z-10">
-        {/* Logo Container */}
-        <div className="w-32 h-32 sm:w-40 sm:h-40 bg-white/90 rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_50px_rgba(0,188,212,0.3)] mb-8 transform transition-transform hover:scale-105 duration-500">
-          <svg
-            width="64"
-            height="64"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="sm:scale-125"
+      {/* Logo + headline — ring diameter defines icon (~40% of diameter) */}
+      <div className="relative z-10 flex w-full max-w-md flex-grow animate-splash-fade-in-up flex-col items-center justify-center px-6">
+        <div
+          className="relative mb-8 flex shrink-0 items-center justify-center rounded-full bg-white/40 shadow-lg ring-1 ring-white/50 backdrop-blur-md dark:bg-white/5 dark:ring-white/10"
+          style={{
+            "--splash-ring": "min(14.5rem, 70vw)",
+            width: "var(--splash-ring)",
+            height: "var(--splash-ring)",
+          }}
+        >
+          <span
+            className="material-symbols-outlined text-primary leading-none"
+            style={{
+              fontSize: "calc(var(--splash-ring) * 0.4)",
+              fontVariationSettings:
+                "'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 96",
+            }}
           >
-            <path
-              d="M18.5 7.5C18.5 7.5 16.5 5.5 15 5.5H9C7.5 5.5 5.5 7.5 5.5 7.5L4 12V16.5C4 17.3284 4.67157 18 5.5 18H6.5C7.32843 18 8 17.3284 8 16.5V15.5H16V16.5C16 17.3284 16.6715 18 17.5 18H18.5C19.3284 18 20 17.3284 20 16.5V12L18.5 7.5Z"
-              fill="#00C4D9"
-            />
-            <circle cx="7.5" cy="14.5" r="1.5" fill="white" />
-            <circle cx="16.5" cy="14.5" r="1.5" fill="white" />
-            <path
-              d="M5.5 11H18.5"
-              stroke="white"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <path
-              d="M4.5 6.5L2 8.5"
-              stroke="#00C4D9"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <circle cx="2" cy="8.5" r="1" fill="#00C4D9" />
-          </svg>
+            toys
+          </span>
         </div>
 
-        {/* Brand Name */}
-        <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter mb-4">
-          <span className="text-slate-800">Toy</span>
-          <span className="text-[#00C4D9]">Box</span>
-        </h1>
-
-        {/* Tagline */}
-        <p className="text-slate-600 text-lg sm:text-xl font-medium tracking-wide">
-          Share Joy, Exchange Toys
-        </p>
+        <div className="space-y-2 text-center">
+          <h1 className="text-[40px] font-extrabold leading-tight tracking-tight text-slate-900 dark:text-white">
+            Toy<span className="text-primary">Box</span>
+          </h1>
+          <p className="px-4 text-center text-lg font-medium text-slate-600 dark:text-slate-300">
+            Share Joy, Exchange Toys
+          </p>
+        </div>
       </div>
 
-      {/* Footer Indicators */}
-      <div className="absolute bottom-12 flex flex-col items-center gap-6">
-        <div className="flex gap-3">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#00C4D9] animate-pulse"></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#00C4D9]/40"></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#00C4D9]/40"></div>
+      {/* Loading dots + version */}
+      <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-6 px-8 pb-12">
+        <div className="flex gap-2">
+          <div className="h-2.5 w-2.5 animate-bounce rounded-full bg-primary" />
+          <div
+            className="h-2.5 w-2.5 animate-bounce rounded-full bg-primary/60"
+            style={{ animationDelay: "0.1s" }}
+          />
+          <div
+            className="h-2.5 w-2.5 animate-bounce rounded-full bg-primary/30"
+            style={{ animationDelay: "0.2s" }}
+          />
         </div>
-        <p className="text-xs text-slate-400 font-semibold tracking-[0.2em] uppercase">
-          Version 1.0.2
+        <p className="text-xs font-medium uppercase tracking-widest text-slate-400 dark:text-slate-500">
+          v1.0.2
         </p>
       </div>
     </div>

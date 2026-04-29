@@ -1,48 +1,48 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Grid3X3, MapPin, MessageCircle, Package, Pencil, UserPlus } from "lucide-react";
 import { profileInitials } from "@/lib/profile";
 import { useChatWidget } from "@/contexts/ChatWidgetContext";
 
-export function ProfileGridThumb({ href, imageUrl, title, subtitle, isLocal }) {
+const PRIMARY = "#4c99e6";
+
+function ToyGridItem({ toy, isSelf }) {
+  const img = toy.images?.[0] ?? toy.imageUrl;
+  const local =
+    typeof img === "string" && (img.startsWith("blob:") || img.startsWith("data:"));
+
   return (
     <Link
-      href={href}
-      className="group relative aspect-[3/4] overflow-hidden rounded-lg bg-slate-100 sm:rounded-xl"
+      href={`/toybox/${toy.id}`}
+      className="group relative flex flex-col gap-2"
     >
-      <Image
-        src={imageUrl}
-        alt={title}
-        fill
-        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-        sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, (max-width: 1536px) 16vw, 14vw"
-        unoptimized={isLocal}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/75 via-slate-900/10 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3">
-        <p className="line-clamp-2 text-[11px] font-bold leading-tight text-white sm:text-xs">
-          {title}
-        </p>
-        {subtitle ? (
-          <p className="mt-0.5 line-clamp-1 text-[10px] text-white/85">{subtitle}</p>
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-slate-200 shadow-sm dark:bg-slate-800">
+        {isSelf ? (
+          <div
+            className="absolute right-1.5 top-1.5 z-10 flex size-7 items-center justify-center rounded-lg border border-slate-100 bg-white/95 text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-200"
+            aria-hidden
+          >
+            <span className="material-symbols-outlined text-[18px]">edit</span>
+          </div>
         ) : null}
+        <Image
+          src={img}
+          alt=""
+          fill
+          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 160px"
+          unoptimized={local}
+        />
       </div>
+      <p className="truncate px-1 text-center text-[13px] font-semibold leading-tight text-slate-700 dark:text-slate-300">
+        {toy.title}
+      </p>
     </Link>
   );
 }
 
-/**
- * @param {object} props
- * @param {{ displayName: string, username: string, bio?: string, location?: string, avatarUrl?: string | null, following?: number, followers?: number, likes?: number }} props.profile
- * @param {Array} props.listedToys
- * @param {Array} props.exchanged
- * @param {boolean} props.isSelf
- */
 export default function ProfileView({ profile, listedToys, exchanged, isSelf }) {
-  const [tab, setTab] = useState("listed");
   const { openWidgetForPeerUsername } = useChatWidget();
 
   const coverUrl = profile.avatarUrl;
@@ -50,197 +50,176 @@ export default function ProfileView({ profile, listedToys, exchanged, isSelf }) 
     typeof coverUrl === "string" &&
     (coverUrl.startsWith("blob:") || coverUrl.startsWith("data:"));
 
+  const reliability = Number(profile.reliability);
+  const reliabilityScore =
+    Number.isFinite(reliability) && !Number.isNaN(reliability)
+      ? Math.min(10, Math.max(0, Math.round(reliability)))
+      : 10;
+
+  const toyPreview = listedToys.slice(0, 6);
+  const viewAllHref = isSelf ? "/toybox/my-toys" : "/toybox";
+
   return (
-    <div className="w-full min-w-0">
-      <div className="flex flex-col items-center px-2 pb-6 pt-2 text-center sm:px-0">
+    <div className="w-full min-w-0 font-[family-name:var(--font-plus-jakarta-sans,sans-serif)] text-slate-900 dark:text-slate-100">
+      {/* Top bar — matches mock: title + edit (self) or back + message (other) */}
+      <div className="mb-6 grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 border-b border-slate-200 pb-4 dark:border-slate-800 sm:mb-8 sm:pb-6">
+        <div className="flex justify-start">
+          {!isSelf ? (
+            <Link
+              href="/toybox"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+              aria-label="Back to ToyBox"
+            >
+              <span className="material-symbols-outlined text-[24px] leading-none">
+                arrow_back
+              </span>
+            </Link>
+          ) : (
+            <span className="block w-10" aria-hidden />
+          )}
+        </div>
+        <h1 className="text-center text-lg font-bold leading-tight tracking-tight">
+          Profile
+        </h1>
+        <div className="flex justify-end">
+          {isSelf ? (
+            <Link
+              href="/toybox/profile/edit"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-900 transition-colors hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+              aria-label="Edit profile"
+            >
+              <span className="material-symbols-outlined text-[24px] leading-none">
+                edit
+              </span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openWidgetForPeerUsername(profile.username)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-900 transition-colors hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+              aria-label="Message"
+            >
+              <span className="material-symbols-outlined text-[24px] leading-none">
+                chat
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Header: avatar + name + location + reliability */}
+      <div className="flex flex-col items-center px-2 pb-6 sm:px-6">
         <div className="relative">
-          <div className="relative h-[7.5rem] w-[7.5rem] overflow-hidden rounded-full border-4 border-white shadow-lg ring-2 ring-[#e0f7fa] sm:h-32 sm:w-32">
+          <div
+            className="relative h-[7.75rem] w-[7.75rem] shrink-0 overflow-hidden rounded-full border-4 border-white shadow-sm dark:border-slate-800 sm:h-32 sm:w-32"
+            style={{ minHeight: "7.75rem", minWidth: "7.75rem" }}
+          >
             {coverUrl ? (
               <Image
                 src={coverUrl}
-                alt={profile.displayName}
+                alt=""
                 fill
                 className="object-cover"
                 unoptimized={isLocalAvatar}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#80deea] to-[#00C4D9] text-3xl font-bold text-white sm:text-4xl">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-200 to-[color:var(--primary,#4c99e6)] text-4xl font-bold text-white dark:from-slate-600 dark:to-slate-700">
                 {profileInitials(profile.displayName)}
               </div>
             )}
           </div>
         </div>
 
-        <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        <p className="mt-5 text-center text-2xl font-bold leading-tight tracking-tight">
           {profile.displayName}
-        </h1>
-        <p className="mt-1 text-base font-medium text-slate-500">@{profile.username}</p>
-        <p className="mt-2 text-sm text-slate-600">
-          <span className="font-bold text-slate-900">{profile.following ?? 0}</span> following
-          <span className="mx-2 text-slate-300" aria-hidden>
-            ·
-          </span>
-          <span className="font-bold text-slate-900">{profile.followers ?? 0}</span> followers
         </p>
 
-        <div className="mt-5 grid w-full grid-cols-3 gap-2 border-y border-slate-100 py-4 sm:px-4 lg:px-8">
-          <div className="text-center">
-            <p className="text-lg font-bold text-slate-900">{listedToys.length}</p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Listed
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-bold text-slate-900">{exchanged.length}</p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Exchanged
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-bold text-slate-900">{profile.likes ?? 0}</p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Likes
-            </p>
-          </div>
+        <div className="mt-2 flex items-center gap-1 text-slate-500 dark:text-slate-400">
+          <span
+            className="material-symbols-outlined text-base"
+            style={{ color: PRIMARY }}
+          >
+            location_on
+          </span>
+          <span className="text-sm font-medium">
+            {profile.location || "—"}
+          </span>
+        </div>
+
+        <div className="mt-3 rounded-full border border-green-200 bg-emerald-50 px-4 py-1.5 dark:border-green-800/50 dark:bg-green-900/30">
+          <p className="text-sm font-bold tracking-tight text-green-600 dark:text-green-400">
+            {reliabilityScore}/10 reliability
+          </p>
         </div>
 
         {profile.bio ? (
-          <p className="mx-auto mt-4 w-full max-w-4xl px-4 text-center text-sm leading-relaxed text-slate-700 sm:px-6 lg:px-8">
+          <p className="mx-auto mt-5 max-w-lg text-center text-sm leading-relaxed text-slate-600 dark:text-slate-400">
             {profile.bio}
           </p>
         ) : null}
-
-        <div className="mt-2 flex items-center justify-center gap-1.5 text-sm text-slate-500">
-          <MapPin className="h-4 w-4 shrink-0 text-[#00C4D9]" aria-hidden />
-          {profile.location || (isSelf ? "Add your city" : "—")}
-        </div>
-
-        {isSelf ? (
-          <Link
-            href="/toybox/profile/edit"
-            className="mt-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-8 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition-colors hover:border-[#B2EBF2] hover:bg-[#e0f7fa]/40"
-          >
-            <Pencil className="h-4 w-4 text-[#00C4D9]" aria-hidden />
-            Edit profile
-          </Link>
-        ) : (
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              disabled
-              title="Coming soon"
-              className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-slate-200 bg-white px-8 py-2.5 text-sm font-bold text-slate-400 shadow-sm"
-            >
-              <UserPlus className="h-4 w-4 text-slate-400" aria-hidden />
-              Follow
-            </button>
-            <button
-              type="button"
-              onClick={() => openWidgetForPeerUsername(profile.username)}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-8 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition-colors hover:border-[#B2EBF2] hover:bg-[#e0f7fa]/40"
-            >
-              <MessageCircle className="h-4 w-4 text-[#00C4D9]" aria-hidden />
-              Message
-            </button>
-          </div>
-        )}
       </div>
 
-      <div className="mt-2 border-t border-slate-100">
-        <div
-          className="grid grid-cols-2 border-b border-slate-100"
-          role="tablist"
-          aria-label="Profile content"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "listed"}
-            onClick={() => setTab("listed")}
-            className={`flex items-center justify-center gap-2 py-3.5 text-sm font-bold transition-colors ${
-              tab === "listed"
-                ? "border-b-2 border-slate-900 text-slate-900"
-                : "border-b-2 border-transparent text-slate-500 hover:text-slate-800"
-            }`}
+      {/* Stats */}
+      <div className="flex gap-3 px-2 pb-6 sm:px-4 lg:gap-4">
+        <div className="flex flex-1 flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4 text-center dark:border-slate-800 dark:bg-slate-900/50">
+          <p
+            className="text-2xl font-bold leading-tight"
+            style={{ color: PRIMARY }}
           >
-            <Grid3X3 className="h-4 w-4" aria-hidden />
-            Listed
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "exchanged"}
-            onClick={() => setTab("exchanged")}
-            className={`flex items-center justify-center gap-2 py-3.5 text-sm font-bold transition-colors ${
-              tab === "exchanged"
-                ? "border-b-2 border-slate-900 text-slate-900"
-                : "border-b-2 border-transparent text-slate-500 hover:text-slate-800"
-            }`}
+            {listedToys.length}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Toys listed
+          </p>
+        </div>
+        <div className="flex flex-1 flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4 text-center dark:border-slate-800 dark:bg-slate-900/50">
+          <p
+            className="text-2xl font-bold leading-tight"
+            style={{ color: PRIMARY }}
           >
-            <Package className="h-4 w-4" aria-hidden />
-            Exchanged
-          </button>
+            {exchanged.length}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Exchanges
+          </p>
+        </div>
+      </div>
+
+      {/* Toys grid */}
+      <div className="px-2 pb-8 sm:px-4">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-xl font-bold tracking-tight">
+            {isSelf ? "My toys" : "Listings"}
+          </h2>
+          <Link
+            href={viewAllHref}
+            className="text-sm font-bold hover:underline"
+            style={{ color: PRIMARY }}
+          >
+            View all
+          </Link>
         </div>
 
-        <div className="mt-1" role="tabpanel">
-          {tab === "listed" && (
-            <>
-              {listedToys.length === 0 ? (
-                <div className="py-16 text-center text-sm text-slate-500">
-                  <p>No listings yet.</p>
-                  {isSelf ? (
-                    <Link
-                      href="/toybox/my-toys/add"
-                      className="mt-3 inline-block font-semibold text-[#00C4D9] hover:text-[#00ACC1]"
-                    >
-                      Add a toy
-                    </Link>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="grid w-full grid-cols-3 gap-0.5 sm:grid-cols-4 sm:gap-1 lg:grid-cols-5 xl:grid-cols-6">
-                  {listedToys.map((t) => {
-                    const img = t.images?.[0] ?? t.imageUrl;
-                    const local =
-                      typeof img === "string" &&
-                      (img.startsWith("blob:") || img.startsWith("data:"));
-                    return (
-                      <ProfileGridThumb
-                        key={t.id}
-                        href={`/toybox/${t.id}`}
-                        imageUrl={img}
-                        title={t.title}
-                        subtitle={t.listedOn ? `Listed ${t.listedOn}` : null}
-                        isLocal={local}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          )}
-
-          {tab === "exchanged" && (
-            <div className="grid w-full grid-cols-3 gap-0.5 sm:grid-cols-4 sm:gap-1 lg:grid-cols-5 xl:grid-cols-6">
-              {exchanged.length === 0 ? (
-                <div className="col-span-full py-16 text-center text-sm text-slate-500">
-                  No exchanged toys yet.
-                </div>
-              ) : (
-                exchanged.map((t) => (
-                  <ProfileGridThumb
-                    key={t.id}
-                    href={`/toybox/${t.toyId}`}
-                    imageUrl={t.imageUrl}
-                    title={t.title}
-                    subtitle={`From ${t.receivedFrom}`}
-                    isLocal={false}
-                  />
-                ))
-              )}
-            </div>
-          )}
-        </div>
+        {toyPreview.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 py-14 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/30 dark:text-slate-400">
+            <p>No toys listed yet.</p>
+            {isSelf ? (
+              <Link
+                href="/toybox/my-toys/add"
+                className="mt-4 inline-block font-semibold hover:underline"
+                style={{ color: PRIMARY }}
+              >
+                Add a toy
+              </Link>
+            ) : null}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            {toyPreview.map((t) => (
+              <ToyGridItem key={t.id} toy={t} isSelf={isSelf} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

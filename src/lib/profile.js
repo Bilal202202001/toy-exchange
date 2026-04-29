@@ -14,6 +14,8 @@ export const defaultProfile = {
   following: 42,
   followers: 128,
   likes: 316,
+  /** Displayed as X/10 on profile (reliability / trust). */
+  reliability: 10,
 };
 
 export function loadProfile() {

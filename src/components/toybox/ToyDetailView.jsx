@@ -1,210 +1,297 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Star, User, Calendar, CircleCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
 import ToyImageSlider from "./ToyImageSlider";
 
-function formatListedOn(isoDate) {
-  try {
-    return new Intl.DateTimeFormat("en", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(isoDate));
-  } catch {
-    return isoDate;
-  }
+/** Pull first matching detail row (partial label match). */
+function getDetail(details, ...labelHints) {
+  if (!details?.length) return "";
+  const hints = labelHints.map((h) => h.toLowerCase());
+  const row = details.find((d) =>
+    hints.some((h) => d.label.toLowerCase().includes(h)),
+  );
+  return row?.value?.trim() ?? "";
 }
 
-function StarRating({ value }) {
-  const full = Math.floor(value);
-  const hasHalf = value - full >= 0.5;
+function deriveConditionMetric(raw) {
+  if (!raw) return { value: 8, label: "8/10" };
+  const str = String(raw);
+  const m = str.match(/(\d+(?:\.\d+)?)\s*\/\s*10/);
+  if (m) {
+    const v = Number(m[1]);
+    const clamped = Math.min(10, Math.max(1, v));
+    return {
+      value: clamped,
+      label: `${clamped % 1 === 0 ? Math.round(clamped) : clamped}/10`,
+    };
+  }
+  const low = str.toLowerCase();
+  const fallback = [
+    ["like new", 10],
+    ["excellent", 9],
+    ["very good", 8],
+    ["good", 7],
+    ["fair", 5],
+  ];
+  for (const [k, v] of fallback) {
+    if (low.includes(k)) return { value: v, label: `${v}/10` };
+  }
+  return { value: 8, label: "8/10" };
+}
+
+function memberReliabilityTenth(rating) {
+  const r = Number(rating);
+  if (!Number.isFinite(r)) return { value: 9.5, label: "9.5/10" };
+  const v = Math.min(10, Math.max(1, r * 2));
+  return {
+    value: v,
+    label: `${Number.isInteger(v) ? v : v.toFixed(1)}/10`,
+  };
+}
+
+function formatEstPrice(worth) {
+  if (!worth || worth === "—") return "—";
+  const t = String(worth).trim();
+  if (/^\$/.test(t)) return t;
+  const n = Number.parseFloat(t.replace(/[^0-9.]/g, ""));
+  if (Number.isNaN(n)) return t;
+  return n % 1 === 0 ? `$${Math.round(n)}` : `$${n.toFixed(2)}`;
+}
+
+/** 10 ticks; highlight at index for value 1–10 (e.g. 9.5 → 9th dot 0-based index 9). */
+function TenthScaleVisual({ value }) {
+  const pct = Math.min(100, Math.max(4, (value / 10) * 100));
+  const activeDot = Math.min(
+    9,
+    Math.max(0, Math.round(Number(value)) - 1),
+  );
   return (
-    <div className="flex flex-wrap items-center gap-0.5">
-      {[0, 1, 2, 3, 4].map((i) => {
-        const filled = i < full || (i === full && hasHalf);
-        return (
-          <Star
+    <div className="relative flex h-2 items-center rounded-full bg-slate-100">
+      <div
+        className="absolute left-0 top-0 h-full rounded-full bg-blue-600"
+        style={{ width: `${pct}%` }}
+      />
+      <div className="z-10 flex w-full justify-between px-1">
+        {Array.from({ length: 10 }, (_, i) => (
+          <div
             key={i}
-            className={`h-5 w-5 shrink-0 ${
-              filled ? "fill-amber-400 text-amber-400" : "fill-slate-100 text-slate-300"
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+              i === activeDot
+                ? "bg-white ring-2 ring-blue-600"
+                : "bg-slate-300"
             }`}
-            strokeWidth={1.2}
           />
-        );
-      })}
-      <span className="ml-2 text-lg font-semibold text-slate-800">{value.toFixed(1)}</span>
+        ))}
+      </div>
     </div>
   );
 }
 
 export default function ToyDetailView({ listing, hideRequest = false }) {
+  const router = useRouter();
   const {
     title,
     images,
     listedBy,
     ownerUsername,
-    listedOn,
-    rating,
-    location,
     description,
     details,
+    rating,
+    location,
+    listedOn,
   } = listing;
 
-  const [requestSubmitted, setRequestSubmitted] = useState(false);
+  const category = getDetail(details, "category") || "Toy";
+  const ageRange = getDetail(details, "age", "age group");
+  const exchangeFor = getDetail(details, "exchange", "open to exchange");
+  const worthRaw = getDetail(details, "worth", "estimated");
+  const conditionRaw = getDetail(details, "condition");
+
+  const conditionMetric = deriveConditionMetric(conditionRaw);
+  const memberMetric = memberReliabilityTenth(rating);
+  const priceDisplay = formatEstPrice(worthRaw);
 
   const handleRequest = () => {
-    setRequestSubmitted(true);
+    router.push(`/toybox/exchange-proposal/${listing.id}`);
   };
 
+  const badgeText = category.slice(0, 18).toUpperCase();
+
   return (
-    <div className="relative w-full min-w-0">
-      {!hideRequest && requestSubmitted && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-[2px]"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="request-success-title"
-        >
-          <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-2xl shadow-slate-300/50">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#e0f7fa]">
-              <CircleCheck className="h-10 w-10 text-[#00C4D9]" strokeWidth={2} />
+    <div className="w-full min-w-0 font-[family-name:var(--font-plus-jakarta-sans,sans-serif)] text-slate-900">
+
+      <div className="relative -mx-4 sm:-mx-6 lg:-mx-8">
+        <div className="relative w-full overflow-hidden">
+          <ToyImageSlider
+            images={images}
+            title={title}
+            aspectClassName="aspect-[4/3]"
+            roundedClassName="rounded-none"
+          />
+
+          <Link
+            href="/toybox"
+            className="absolute left-4 top-4 z-20 flex size-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white dark:bg-slate-800/90 dark:text-slate-200"
+            aria-label="Back to listings"
+          >
+            <span className="material-symbols-outlined text-[22px] leading-none">
+              arrow_back
+            </span>
+          </Link>
+
+          {badgeText ? (
+            <div className="absolute left-4 top-[4.5rem] z-10 sm:left-14 lg:left-24">
+              <div className="rounded-full bg-white/90 px-3 py-1 shadow-sm backdrop-blur-md dark:bg-slate-900/80">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  {badgeText}
+                </span>
+              </div>
             </div>
-            <h2
-              id="request-success-title"
-              className="mt-6 text-2xl font-bold text-slate-900"
-            >
-              Request submitted successfully
-            </h2>
-            <p className="mt-3 text-slate-600">
-              The seller will be notified. You can track requests from your Requests tab.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <button
-                type="button"
-                onClick={() => setRequestSubmitted(false)}
-                className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                Close
-              </button>
-              <Link
-                href="/toybox/requests"
-                className="rounded-2xl bg-[#00C4D9] px-6 py-3 text-sm font-bold text-white shadow-[0_12px_28px_rgba(0,196,217,0.35)] transition-colors hover:bg-[#00ACC1]"
-              >
-                View requests
-              </Link>
-            </div>
-            <Link
-              href="/toybox"
-              className="mt-4 inline-block text-sm font-semibold text-[#00C4D9] hover:text-[#00ACC1]"
-            >
-              Back to listings
-            </Link>
-          </div>
-        </div>
-      )}
-
-      <Link
-        href="/toybox"
-        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[#00C4D9] hover:text-[#00ACC1]"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to listings
-      </Link>
-
-      <h1 className="mb-6 text-2xl font-bold text-slate-900 sm:mb-8 sm:text-3xl">{title}</h1>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start lg:gap-10">
-        {/* Left: images (same 16:9 as listing cards) + description */}
-        <div className="flex min-w-0 flex-col gap-6">
-          <ToyImageSlider images={images} title={title} />
-          <div>
-            <h2 className="text-lg font-bold text-slate-800">Description</h2>
-            <p className="mt-3 whitespace-pre-wrap text-base leading-relaxed text-slate-600">
-              {description}
-            </p>
-          </div>
+          ) : null}
         </div>
 
-        {/* Right: information + request */}
-        <div className="flex min-w-0 flex-col gap-6 lg:pt-0">
-          <div>
-            <h2 className="text-lg font-bold text-slate-800">Information</h2>
-            <div className="mt-4 grid gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-              <div className="flex items-start gap-3">
-                <User className="mt-0.5 h-5 w-5 shrink-0 text-[#00C4D9]" />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                    Listed by
-                  </p>
+        <div className="relative z-10 -mt-8 px-6 pb-12">
+          <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h1 className="mb-1 text-xl font-bold text-slate-900 dark:text-slate-100">
+                  {title}
+                </h1>
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                  <span className="material-symbols-outlined text-sm leading-none">
+                    person
+                  </span>
                   {ownerUsername ? (
                     <Link
                       href={`/toybox/profile/${ownerUsername}`}
-                      className="mt-0.5 inline-block font-semibold text-slate-800 underline-offset-2 hover:text-[#00ACC1] hover:underline"
+                      className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400"
                     >
                       {listedBy}
                     </Link>
                   ) : (
-                    <p className="mt-0.5 font-semibold text-slate-800">{listedBy}</p>
+                    <span className="text-sm">{listedBy}</span>
                   )}
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <Calendar className="mt-0.5 h-5 w-5 shrink-0 text-[#00C4D9]" />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                    Listed on
-                  </p>
-                  <p className="mt-0.5 font-semibold text-slate-800">{formatListedOn(listedOn)}</p>
+              <div className="text-right">
+                <span className="text-xl font-extrabold text-blue-600 dark:text-blue-400">
+                  {priceDisplay}
+                </span>
+                <p className="text-[10px] font-bold uppercase tracking-tighter text-slate-400">
+                  Est. Value
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-6 flex flex-wrap gap-2">
+              {ageRange ? (
+                <div className="flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-1.5 dark:bg-blue-950/40">
+                  <span className="material-symbols-outlined text-lg text-blue-600 dark:text-blue-400">
+                    child_care
+                  </span>
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                    {ageRange}
+                  </span>
                 </div>
+              ) : null}
+              <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-800/80">
+                <span className="material-symbols-outlined text-lg text-slate-600 dark:text-slate-300">
+                  category
+                </span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  {category}
+                </span>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
+                <span className="material-symbols-outlined text-lg text-blue-600 dark:text-blue-400">
+                  swap_horiz
+                </span>
+                Expected Exchange
+              </h2>
+              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                {exchangeFor || "Open to discussing fair swaps in this category."}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                About
+              </h2>
+              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                {description}
+              </p>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-t border-slate-100 pt-4 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
+              {location ? (
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">pin_drop</span>
+                  {location}
+                </span>
+              ) : null}
+              {listedOn ? (
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">calendar_today</span>
+                  Listed {listedOn}
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
+            <h2 className="mb-6 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
+              <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">
+                verified
+              </span>
+              Trust &amp; Quality
+            </h2>
+            <div className="space-y-8">
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Toy Condition Rating
+                  </span>
+                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                    {conditionMetric.label}
+                  </span>
+                </div>
+                <TenthScaleVisual value={conditionMetric.value} />
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Rating</p>
-                <div className="mt-1">
-                  <StarRating value={rating} />
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Member Reliability
+                  </span>
+                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                    {memberMetric.label}
+                  </span>
                 </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-[#00C4D9]" />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                    Location
-                  </p>
-                  <p className="mt-0.5 font-semibold text-slate-800">{location}</p>
-                </div>
+                <TenthScaleVisual value={memberMetric.value} />
               </div>
             </div>
           </div>
 
-          {details?.length > 0 && (
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">Details</h2>
-              <dl className="mt-3 divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-white">
-                {details.map((row) => (
-                  <div
-                    key={row.label}
-                    className="flex flex-col gap-0.5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-                  >
-                    <dt className="text-sm font-medium text-slate-500">{row.label}</dt>
-                    <dd className="text-sm font-semibold text-slate-800">{row.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          )}
-
-          {!hideRequest && (
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleRequest}
-                className="w-full rounded-2xl bg-[#00C4D9] px-6 py-4 text-lg font-bold text-white shadow-[0_20px_40px_rgba(0,196,217,0.25)] transition-colors hover:bg-[#00ACC1] active:scale-[0.99]"
-              >
-                Request this toy
-              </button>
-            </div>
-          )}
+          {!hideRequest ? (
+            <button
+              type="button"
+              onClick={handleRequest}
+              className="flex w-full cursor-pointer items-center justify-between rounded-2xl bg-blue-600 p-6 text-left text-white shadow-md transition-transform duration-200 hover:bg-blue-600/95 active:scale-[0.98] dark:bg-blue-600"
+            >
+              <div className="flex flex-col">
+                <span className="text-sm font-bold">Request Exchange</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest opacity-80">
+                  Instant Proposal
+                </span>
+              </div>
+              <span className="material-symbols-outlined text-2xl leading-none">
+                sync_alt
+              </span>
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

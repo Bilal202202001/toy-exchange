@@ -4,20 +4,35 @@
 export const incomingRequestsMock = [
   {
     id: "req-in-1",
-    toyId: "mine-seed-1",
-    toyTitle: "Wooden train set",
+    toyId: "mine-seed-3",
+    toyTitle: "Lego Set",
     imageUrl:
-      "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=200&h=200&fit=crop",
-    requesterName: "Sarah M.",
+      "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=200&h=200&fit=crop",
+    requesterName: "Sarah Jenkins",
     requesterUsername: "sarah_m",
     requesterLocation: "Austin, TX",
+    requesterRating: 9.8,
     message:
-      "Hi! We’re looking for a train set for our 4-year-old. Happy to swap one of our board games if you’re interested.",
+      "Hi! We’re looking for LEGO for our 4-year-old. Happy to swap one of our board games if you’re interested.",
     requestedAt: "2026-04-10",
     status: "pending",
   },
   {
     id: "req-in-2",
+    toyId: "mine-seed-1",
+    toyTitle: "Vintage Wooden Train",
+    imageUrl:
+      "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=200&h=200&fit=crop",
+    requesterName: "Alex Thompson",
+    requesterUsername: null,
+    requesterLocation: "Portland, OR",
+    requesterRating: 8,
+    message: "",
+    requestedAt: "2026-04-09",
+    status: "pending",
+  },
+  {
+    id: "req-in-3",
     toyId: "mine-seed-3",
     toyTitle: "LEGO bricks bundle",
     imageUrl:
@@ -25,12 +40,14 @@ export const incomingRequestsMock = [
     requesterName: "The Chen family",
     requesterUsername: "chen_family",
     requesterLocation: "Seattle, WA",
-    message: "Could we pick up this weekend? Our kids are building a big city project.",
+    requesterRating: 9.2,
+    message:
+      "Could we pick up this weekend? Our kids are building a big city project.",
     requestedAt: "2026-04-08",
     status: "accepted",
   },
   {
-    id: "req-in-3",
+    id: "req-in-4",
     toyId: "mine-seed-2",
     toyTitle: "Plush teddy bear",
     imageUrl:
@@ -38,7 +55,9 @@ export const incomingRequestsMock = [
     requesterName: "James K.",
     requesterUsername: "james_k",
     requesterLocation: "Portland, OR",
-    message: "",
+    requesterRating: 8.6,
+    message:
+      "Is the teddy still available? We can meet in Portland.",
     requestedAt: "2026-04-05",
     status: "declined",
   },
@@ -64,17 +83,11 @@ export const incomingRequestsChatSeed = {
     {
       id: "c1",
       from: "them",
-      body: "Could we pick up this weekend? Our kids are building a big city project.",
-      time: "2026-04-08T11:30:00",
-    },
-    {
-      id: "c2",
-      from: "me",
-      body: "Saturday morning works for us. I’ll send the address after we confirm.",
-      time: "2026-04-08T12:05:00",
+      body: "Interested in vintage wooden trains — can meet this week if helpful.",
+      time: "2026-04-09T09:00:00",
     },
   ],
-  "req-in-3": [
+  "req-in-4": [
     {
       id: "c1",
       from: "them",
@@ -172,3 +185,149 @@ export const outgoingRequestsChatSeed = {
     },
   ],
 };
+
+/**
+ * Rich “request details” payload (Pending Request Detail View).
+ * Requests with keys here resolve to /toybox/requests/[id].
+ */
+export const incomingRequestDetailExtras = {
+  "req-in-2": {
+    partnerOfferedToys: [
+      {
+        toyId: "partner-offer-1",
+        title: "Retro Robot B-Series",
+        imageUrl:
+          "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=200&h=200&fit=crop",
+        conditionLabel: "9/10",
+        estValueUsd: 30,
+      },
+      {
+        toyId: "partner-offer-2",
+        title: "Lego Space Station",
+        imageUrl:
+          "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=200&h=200&fit=crop",
+        conditionLabel: "8/10",
+        estValueUsd: 20,
+      },
+    ],
+    yourOfferToy: {
+      toyId: "mine-seed-1",
+      title: "Vintage Wooden Train",
+      imageUrl:
+        "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=200&h=200&fit=crop",
+      conditionLabel: "9/10",
+      estValueUsd: 30,
+    },
+    partner: {
+      avatarUrl:
+        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop",
+      tradesCount: 24,
+      rating: 9.8,
+      locationLabel: "Portland, Oregon",
+    },
+    totalRequestValueUsd: 50,
+    totalOfferValueUsd: 30,
+  },
+};
+
+const DEFAULT_AVATAR_URL =
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=160&h=160&fit=crop&crop=faces";
+
+/** When no rich mock payload exists — enough to render request details consistently. */
+function buildFallbackIncomingDetailExtra(base) {
+  const rating = Number(base.requesterRating);
+  const r = Number.isFinite(rating) ? rating : 8;
+  const offerUsd = Math.max(15, Math.min(95, Math.round(r * 3.5)));
+
+  return {
+    partnerOfferedToys: [
+      {
+        toyId: `partner-stub-${base.id}`,
+        title: `Offer bundle (chat for details)`,
+        imageUrl: base.imageUrl,
+        conditionLabel: "—",
+        estValueUsd: offerUsd,
+      },
+    ],
+    yourOfferToy: {
+      toyId: base.toyId,
+      title: base.toyTitle,
+      imageUrl: base.imageUrl,
+      conditionLabel: "—",
+      estValueUsd: offerUsd,
+    },
+    partner: {
+      avatarUrl: DEFAULT_AVATAR_URL,
+      tradesCount: 12,
+      rating: Number(r.toFixed(1)),
+      locationLabel: base.requesterLocation,
+    },
+    totalRequestValueUsd: offerUsd,
+    totalOfferValueUsd: offerUsd,
+  };
+}
+
+export function getIncomingRequestDetailPayload(requestId) {
+  const id = String(requestId);
+  const base = incomingRequestsMock.find((r) => r.id === id);
+  if (!base) return null;
+
+  const extra =
+    incomingRequestDetailExtras[id] ?? buildFallbackIncomingDetailExtra(base);
+
+  const loc =
+    extra.partner.locationLabel ??
+    base.requesterLocation ??
+    "";
+
+  return {
+    ...base,
+    partnerOfferedToys: extra.partnerOfferedToys,
+    yourOfferToy: extra.yourOfferToy,
+    partnerDetail: {
+      name: base.requesterName,
+      avatarUrl: extra.partner.avatarUrl,
+      location: loc,
+      username: base.requesterUsername,
+      tradesCount: extra.partner.tradesCount,
+      ratingDisplay: Number(extra.partner.rating),
+    },
+    totalRequestValueUsd: extra.totalRequestValueUsd,
+    totalOfferValueUsd: extra.totalOfferValueUsd,
+  };
+}
+
+export function hasIncomingRequestDetailPage(requestId) {
+  return incomingRequestsMock.some((r) => r.id === String(requestId));
+}
+
+/** Finished swaps — exchange history + rate partner (see Requests → Completed). */
+export const completedExchangesMock = [
+  {
+    id: "cex-1",
+    toyId: "2",
+    toyTitle: "Vintage Teddy Bear",
+    imageUrl:
+      "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=200&h=200&fit=crop",
+    partnerName: "Sarah Jenkins",
+    partnerUsername: "sarah_m",
+  },
+  {
+    id: "cex-2",
+    toyId: "1",
+    toyTitle: "Wooden Railway Set",
+    imageUrl:
+      "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=200&h=200&fit=crop",
+    partnerName: "Mike Chen",
+    partnerUsername: "chen_family",
+  },
+  {
+    id: "cex-3",
+    toyId: "6",
+    toyTitle: "Smart Robot Kit",
+    imageUrl:
+      "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=200&h=200&fit=crop",
+    partnerName: "Elena Rodriguez",
+    partnerUsername: null,
+  },
+];

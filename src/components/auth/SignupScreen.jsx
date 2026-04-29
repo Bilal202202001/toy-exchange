@@ -1,431 +1,377 @@
 "use client";
 
-import { useState } from "react";
-import { Car, ArrowLeft } from "lucide-react";
-import {
-  EmailInput,
-  NumberInput,
-  PasswordInput,
-  SingleImageInput,
-  TextareaInput,
-  TextInput,
-} from "@/components/inputs";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { profileInitials } from "@/lib/profile";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 2;
+
+const SOFT_SHADOW =
+  "shadow-[0_4px_20px_-2px_rgba(99,166,233,0.15)]";
+
+const signupInputClass =
+  `flex h-14 w-full resize-none rounded-xl border-0 bg-signup-surface py-0 pl-12 pr-4 text-base font-medium leading-normal outline-none transition-all placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-signup-primary/50 dark:bg-signup-surface-dark dark:text-slate-100 dark:placeholder:text-slate-400 ${SOFT_SHADOW}`.trim();
+
+const signupLabelClass =
+  "text-sm font-bold text-slate-900 dark:text-slate-100 ml-1";
+
+function IconInput({
+  id,
+  label,
+  icon,
+  type = "text",
+  name,
+  autoComplete,
+  inputMode,
+  placeholder,
+  value,
+  onChange,
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label htmlFor={id} className={signupLabelClass}>
+        {label}
+      </label>
+      <div className="group relative">
+        <div className="pointer-events-none absolute left-4 top-1/2 flex -translate-y-1/2 items-center text-slate-400 transition-colors group-focus-within:text-signup-primary">
+          <span className="material-symbols-outlined">{icon}</span>
+        </div>
+        <input
+          id={id}
+          name={name}
+          type={type}
+          autoComplete={autoComplete}
+          inputMode={inputMode}
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          className={signupInputClass}
+        />
+      </div>
+    </div>
+  );
+}
 
 const emptySignup = () => ({
-  fullName: "",
   email: "",
   phone: "",
   password: "",
+  confirmPassword: "",
+  userName: "",
   address: "",
-  city: "",
-  qualification: "",
-  interests: "",
-  age: "",
 });
 
 export default function SignupScreen({ onNavigate }) {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [signup, setSignup] = useState(emptySignup);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [error, setError] = useState("");
+  const avatarInputRef = useRef(null);
 
-  const setField = (key) => (e) =>
-    setSignup((s) => ({ ...s, [key]: e.target.value }));
+  const setField =
+    (key) =>
+    (e) =>
+      setSignup((s) => ({ ...s, [key]: e.target.value }));
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview?.startsWith("blob:"))
+        URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
 
   const goBack = () => {
+    setError("");
     if (step > 1) setStep(step - 1);
     else onNavigate();
   };
 
-  const leftCopy = {
-    1: {
-      title: (
-        <>
-          Start your <br /> contribution.
-        </>
-      ),
-      body: "Create an account to start listing toys, finding treasures, and meeting other parents.",
-    },
-    2: {
-      title: (
-        <>
-          Add a <br /> friendly face.
-        </>
-      ),
-      body: "A clear photo helps families recognize you when exchanging toys nearby.",
-    },
-    3: {
-      title: (
-        <>
-          Where you <br /> connect.
-        </>
-      ),
-      body: "Your general location keeps meetups easy—exact address stays private until you choose.",
-    },
-    4: {
-      title: (
-        <>
-          Tell us <br /> about you.
-        </>
-      ),
-      body: "Interests and background help others find like-minded parents on ToyBox.",
-    },
+  const handleAvatarFiles = (files) => {
+    const file = files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    const url = URL.createObjectURL(file);
+    setAvatarPreview((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return url;
+    });
   };
 
-  const primaryCtaClass =
-    "w-full rounded-xl bg-[#00C4D9] py-3.5 text-base font-bold text-white shadow-[0_20px_40px_rgba(0,196,217,0.25)] transition-all hover:bg-[#00ACC1] active:scale-[0.98]";
+  const handleContinueStep1 = () => {
+    setError("");
+    if (
+      !signup.email.trim() ||
+      !signup.phone.trim() ||
+      !signup.password ||
+      !signup.confirmPassword
+    ) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    if (signup.password !== signup.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setStep(2);
+  };
+
+  const handleFinish = () => {
+    setError("");
+    if (!signup.userName.trim()) {
+      setError("Please enter your name.");
+      return;
+    }
+    if (!signup.address.trim()) {
+      setError("Please enter your address.");
+      return;
+    }
+    router.push("/toybox");
+  };
+
+  const initials =
+    profileInitials(signup.userName) ||
+    profileInitials(signup.email) ||
+    "?";
+
+  const headerTitle =
+    step === 1 ? "Create Account" : "Set Up Profile";
+
+  const footerButtonLabel = step === 1 ? "Continue" : "Save & Continue";
+
+  const footerAction =
+    step === 1 ? handleContinueStep1 : handleFinish;
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#F8FAFC] p-6 lg:p-12">
-      <div className="absolute left-[-5%] top-[-5%] h-[30vw] w-[30vw] rounded-full bg-[#e0f7fa]/50 opacity-60 blur-3xl"></div>
+    <div
+      className="relative flex min-h-[max(884px,100dvh)] w-full flex-col items-center justify-center overflow-hidden bg-signup-bg py-6 font-[family-name:var(--font-plus-jakarta-sans,sans-serif)] text-slate-900 antialiased dark:bg-signup-bg-dark dark:text-slate-100 sm:py-8 lg:py-12"
+    >
+      {/* Web backdrop — same pattern as login (soft gradients + blurred orbs) */}
+      <div className="absolute left-0 top-0 -z-10 h-64 w-full bg-gradient-to-b from-slate-200/30 to-transparent dark:from-slate-800/20" />
+      <div className="absolute -right-20 -top-20 -z-10 h-64 w-64 rounded-full bg-signup-primary/10 blur-3xl" />
+      <div className="absolute -left-20 top-40 -z-10 h-40 w-40 rounded-full bg-slate-200/40 blur-2xl dark:bg-slate-600/20" />
 
-      <div className="z-10 flex w-full max-w-6xl flex-col items-stretch overflow-hidden rounded-[3rem] border border-slate-100 bg-white shadow-2xl shadow-slate-200/60 lg:h-[min(820px,90vh)] lg:max-h-[90vh] lg:flex-row">
-        {/* Left Side: Visual (Desktop only) */}
-        <div className="relative hidden min-h-0 min-w-0 flex-1 flex-col justify-between bg-gradient-to-br from-[#80deea] to-[#00ACC1] p-16 text-white lg:flex">
-          <div>
-            <button
-              type="button"
-              onClick={goBack}
-              className="group mb-8 flex items-center gap-2 text-teal-50 transition-colors hover:text-white"
-            >
-              <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
-              <span className="font-semibold">
-                {step === 1 ? "Back to Login" : "Back"}
-              </span>
-            </button>
-            <h2 className="mb-4 text-4xl font-bold leading-tight xl:text-5xl">
-              {leftCopy[step].title}
-            </h2>
-            <p className="max-w-xs text-lg leading-relaxed text-teal-50">
-              {leftCopy[step].body}
-            </p>
-          </div>
+      {/* Centered panel — matches login: max-w-md with lg:max-w-lg on wide viewports */}
+      <div className="relative z-10 flex w-full max-w-md flex-col px-6 sm:px-8 lg:max-w-lg">
+        <div
+          className="relative flex min-h-[min(100dvh,100svh)] w-full flex-col overflow-hidden border-0 bg-signup-bg shadow-none outline-none ring-0 dark:bg-signup-bg-dark lg:min-h-[min(820px,90vh)] lg:max-h-[90vh]"
+        >
+          <div className="flex min-h-0 flex-1 flex-col">
+            <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between bg-signup-bg/95 p-4 pb-2 backdrop-blur-md dark:bg-signup-bg-dark/95">
+              <button
+                type="button"
+                aria-label="Go back"
+                onClick={goBack}
+                className="flex size-12 shrink-0 items-center justify-center rounded-full text-slate-900 transition-colors hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+              >
+                <span className="material-symbols-outlined text-[24px] leading-none">
+                  arrow_back
+                </span>
+              </button>
+              <h2 className="flex-1 pr-12 text-center text-lg font-bold leading-tight tracking-[-0.015em]">
+                {headerTitle}
+              </h2>
+            </header>
 
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#00C4D9]">
-                <Car className="text-white" />
-              </div>
-              <div>
-                <h4 className="font-bold">Fast Exchange</h4>
-                <p className="text-xs text-teal-50">Trade toys in minutes locally.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Side: Form — no inner scroll; each step fits the fixed height */}
-        <div className="flex min-h-0 w-full flex-col p-6 sm:p-8 lg:h-full lg:max-h-full lg:w-[600px] lg:shrink-0 lg:overflow-hidden lg:p-10">
-          {step === 1 && (
-            <div className="flex h-full min-h-0 flex-col justify-between gap-4">
-              <div className="shrink-0">
-                <div className="mb-3 flex items-center gap-4 lg:hidden">
-                  <button
-                    type="button"
-                    onClick={goBack}
-                    className="rounded-full bg-slate-100 p-2"
-                  >
-                    <ArrowLeft size={20} />
-                  </button>
-                  <h2 className="font-bold text-slate-800">Create Account</h2>
-                </div>
-
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <h1 className="text-2xl font-bold text-slate-800 sm:text-3xl">Join ToyBox</h1>
-                  <span className="shrink-0 rounded-full border border-[#B2EBF2]/80 bg-[#e0f7fa] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-[#00838F] sm:text-xs">
-                    Step 1 of {TOTAL_STEPS}
-                  </span>
-                </div>
-                <p className="mb-4 text-sm text-slate-500 sm:text-base">
-                  Set up your profile to get started.
-                </p>
-
-                <div className="mb-4 flex gap-1.5">
-                  {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-                    <div
-                      key={i}
-                      className={`h-1.5 flex-1 rounded-full ${i < step ? "bg-[#00C4D9]" : "bg-slate-100"}`}
-                    />
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextInput
-                    label="Full name"
-                    name="fullName"
-                    autoComplete="name"
-                    value={signup.fullName}
-                    onChange={setField("fullName")}
-                    placeholder="John Doe"
-                  />
-                  <EmailInput
-                    label="Email address"
-                    name="email"
-                    autoComplete="email"
-                    value={signup.email}
-                    onChange={setField("email")}
-                    placeholder="john@example.com"
-                  />
-                  <TextInput
-                    label="Phone number"
-                    name="phone"
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    value={signup.phone}
-                    onChange={setField("phone")}
-                    placeholder="+1 (555) 000-0000"
-                  />
-                  <PasswordInput
-                    label="Password"
-                    name="password"
-                    autoComplete="new-password"
-                    value={signup.password}
-                    onChange={setField("password")}
-                    placeholder="••••••••"
-                  />
-                </div>
-              </div>
-
-              <div className="shrink-0 pt-2">
-                <p className="mb-3 text-center text-[11px] leading-relaxed text-slate-500 sm:text-xs">
-                  By creating an account, you agree to our{" "}
-                  <span className="cursor-pointer font-semibold text-[#00C4D9] hover:text-[#00ACC1] hover:underline">
-                    Terms of Service
-                  </span>{" "}
-                  and{" "}
-                  <span className="cursor-pointer font-semibold text-[#00C4D9] hover:text-[#00ACC1] hover:underline">
-                    Privacy Policy
-                  </span>
-                  .
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  className={primaryCtaClass}
-                >
-                  Create Account
-                </button>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="flex h-full min-h-0 flex-col justify-between gap-4">
-              <div className="shrink-0">
-                <div className="mb-3 flex items-center gap-4 lg:hidden">
-                  <button
-                    type="button"
-                    onClick={goBack}
-                    className="rounded-full bg-slate-100 p-2"
-                  >
-                    <ArrowLeft size={20} />
-                  </button>
-                  <h2 className="font-bold text-slate-800">Profile photo</h2>
-                </div>
-
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <h1 className="text-2xl font-bold text-slate-800 sm:text-3xl">Photo</h1>
-                  <span className="shrink-0 rounded-full border border-[#B2EBF2]/80 bg-[#e0f7fa] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-[#00838F] sm:text-xs">
-                    Step 2 of {TOTAL_STEPS}
-                  </span>
-                </div>
-                <p className="mb-4 text-sm text-slate-500 sm:text-base">
-                  Optional but recommended for trust in the community.
-                </p>
-
-                <div className="mb-4 flex gap-1.5">
-                  {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-                    <div
-                      key={i}
-                      className={`h-1.5 flex-1 rounded-full ${i < step ? "bg-[#00C4D9]" : "bg-slate-100"}`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex min-h-0 flex-1 flex-col justify-center">
-                <SingleImageInput
-                  id="signup-avatar"
-                  name="avatar"
-                  variant="avatar"
-                  accept="image/*"
-                  maxSizeBytes={5 * 1024 * 1024}
-                  avatarFallback={profileInitials(signup.fullName)}
-                  hint="JPG or PNG, up to 5 MB"
-                  ariaLabel="Profile photo"
+            <div className="flex w-full shrink-0 flex-col items-center justify-center gap-2 px-8 py-4">
+              <div className="flex w-full gap-2">
+                <div
+                  className={
+                    step === 1
+                      ? "h-2 flex-1 rounded-full bg-signup-primary shadow-[0_0_10px_rgba(99,166,233,0.4)]"
+                      : "h-2 flex-1 rounded-full bg-signup-primary/90"
+                  }
+                />
+                <div
+                  className={
+                    step === 2
+                      ? "h-2 flex-1 rounded-full bg-signup-primary shadow-[0_0_10px_rgba(99,166,233,0.4)]"
+                      : "h-2 flex-1 rounded-full bg-slate-200 dark:bg-slate-700"
+                  }
                 />
               </div>
-
-              <div className="flex shrink-0 flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => setStep(3)}
-                  className={primaryCtaClass}
-                >
-                  Continue
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="w-full py-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-700"
-                >
-                  Back to step 1
-                </button>
-              </div>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Step {step} of {TOTAL_STEPS}
+              </span>
             </div>
-          )}
 
-          {step === 3 && (
-            <div className="flex h-full min-h-0 flex-col justify-between gap-4">
-              <div className="flex min-h-0 flex-1 flex-col">
-                <div className="mb-3 flex items-center gap-4 lg:hidden">
+            {step === 1 ? (
+              <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-4">
+                <div className="pb-8 pt-2 lg:pt-4">
+                  <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 lg:text-[1.75rem]">
+                    Join ToyBox
+                  </h1>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Start exchanging and donating toys today.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-5">
+                  <IconInput
+                    id="signup-email"
+                    label="Email"
+                    icon="mail"
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    placeholder="example@email.com"
+                    value={signup.email}
+                    onChange={setField("email")}
+                  />
+                  <IconInput
+                    id="signup-phone"
+                    label="Phone Number"
+                    icon="call"
+                    type="tel"
+                    name="phone"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    placeholder="(555) 000-0000"
+                    value={signup.phone}
+                    onChange={setField("phone")}
+                  />
+                  <IconInput
+                    id="signup-password"
+                    label="Password"
+                    icon="lock"
+                    type="password"
+                    name="password"
+                    autoComplete="new-password"
+                    placeholder="••••••••"
+                    value={signup.password}
+                    onChange={setField("password")}
+                  />
+                  <IconInput
+                    id="signup-confirm"
+                    label="Confirm Password"
+                    icon="lock_reset"
+                    type="password"
+                    name="confirmPassword"
+                    autoComplete="new-password"
+                    placeholder="••••••••"
+                    value={signup.confirmPassword}
+                    onChange={setField("confirmPassword")}
+                  />
+                </div>
+
+                {error ? (
+                  <p className="mt-4 text-center text-sm font-medium text-red-600 dark:text-red-400" role="alert">
+                    {error}
+                  </p>
+                ) : null}
+
+                <p className="mt-8 text-center text-xs text-slate-400 dark:text-slate-500">
+                  By clicking Continue, you agree to our Terms and Privacy
+                  Policy.
+                </p>
+              </main>
+            ) : (
+              <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-4">
+                <div className="flex w-full flex-col items-center gap-6 py-6">
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    aria-label="Choose profile photo"
+                    onChange={(e) => handleAvatarFiles(e.target.files)}
+                  />
                   <button
                     type="button"
-                    onClick={goBack}
-                    className="rounded-full bg-slate-100 p-2"
+                    className="group relative cursor-pointer border-0 bg-transparent p-0"
+                    onClick={() => avatarInputRef.current?.click()}
                   >
-                    <ArrowLeft size={20} />
-                  </button>
-                  <h2 className="font-bold text-slate-800">Location</h2>
-                </div>
-
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <h1 className="text-2xl font-bold text-slate-800 sm:text-3xl">Location</h1>
-                  <span className="shrink-0 rounded-full border border-[#B2EBF2]/80 bg-[#e0f7fa] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-[#00838F] sm:text-xs">
-                    Step 3 of {TOTAL_STEPS}
-                  </span>
-                </div>
-                <p className="mb-4 text-sm text-slate-500 sm:text-base">
-                  Address and area for safer local exchanges.
-                </p>
-
-                <div className="mb-4 flex gap-1.5">
-                  {Array.from({ length: TOTAL_STEPS }, (_, i) => (
                     <div
-                      key={i}
-                      className={`h-1.5 flex-1 rounded-full ${i < step ? "bg-[#00C4D9]" : "bg-slate-100"}`}
-                    />
-                  ))}
-                </div>
-
-                <div className="flex min-h-0 flex-1 flex-col gap-4">
-                  <TextareaInput
-                    label="Address"
-                    name="address"
-                    autoComplete="street-address"
-                    rows={2}
-                    value={signup.address}
-                    onChange={setField("address")}
-                    placeholder="Street, city, state / region"
-                    className="min-h-[88px] resize-y py-3"
-                  />
-                  <TextInput
-                    label="City / neighborhood"
-                    name="city"
-                    autoComplete="address-level2"
-                    value={signup.city}
-                    onChange={setField("city")}
-                    placeholder="Where you usually meet to exchange"
-                  />
-                </div>
-              </div>
-
-              <div className="flex shrink-0 flex-col gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setStep(4)}
-                  className={primaryCtaClass}
-                >
-                  Continue
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  className="w-full py-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-700"
-                >
-                  Back to step 2
-                </button>
-              </div>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="flex h-full min-h-0 flex-col justify-between gap-4">
-              <div className="flex min-h-0 flex-1 flex-col">
-                <div className="mb-3 flex items-center gap-4 lg:hidden">
-                  <button
-                    type="button"
-                    onClick={goBack}
-                    className="rounded-full bg-slate-100 p-2"
-                  >
-                    <ArrowLeft size={20} />
+                      className="relative h-36 w-36 overflow-hidden rounded-full bg-slate-100 bg-cover bg-center bg-no-repeat shadow-[0_4px_20px_-2px_rgba(99,166,233,0.15)] dark:bg-slate-800 lg:h-40 lg:w-40"
+                      style={
+                        avatarPreview
+                          ? { backgroundImage: `url(${avatarPreview})` }
+                          : undefined
+                      }
+                    >
+                      {!avatarPreview ? (
+                        <div className="flex h-full w-full items-center justify-center bg-slate-100 text-3xl font-bold text-slate-400 dark:bg-slate-800 dark:text-slate-500">
+                          {initials}
+                        </div>
+                      ) : null}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors group-hover:bg-black/30" />
+                    </div>
+                    <div className="absolute bottom-1 right-1 flex items-center justify-center rounded-full bg-signup-primary p-2.5 text-white shadow-lg transition-transform group-hover:scale-110">
+                      <span className="material-symbols-outlined text-[20px] leading-none">
+                        add_a_photo
+                      </span>
+                    </div>
                   </button>
-                  <h2 className="font-bold text-slate-800">About you</h2>
+                  <div className="text-center">
+                    <p className="text-xl font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-100">
+                      Add a photo
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      Show us your smile!
+                    </p>
+                  </div>
                 </div>
 
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <h1 className="text-2xl font-bold text-slate-800 sm:text-3xl">About you</h1>
-                  <span className="shrink-0 rounded-full border border-[#B2EBF2]/80 bg-[#e0f7fa] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-[#00838F] sm:text-xs">
-                    Step 4 of {TOTAL_STEPS}
-                  </span>
-                </div>
-                <p className="mb-4 text-sm text-slate-500 sm:text-base">
-                  Help others find common ground.
-                </p>
-
-                <div className="mb-4 flex gap-1.5">
-                  {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-                    <div
-                      key={i}
-                      className={`h-1.5 flex-1 rounded-full ${i < step ? "bg-[#00C4D9]" : "bg-slate-100"}`}
-                    />
-                  ))}
-                </div>
-
-                <div className="grid flex-1 grid-cols-1 content-start gap-4 sm:grid-cols-2">
-                  <TextInput
-                    label="Qualification"
-                    name="qualification"
-                    value={signup.qualification}
-                    onChange={setField("qualification")}
-                    placeholder="e.g. Teacher, Engineer"
+                <div className="mt-4 flex flex-col gap-6">
+                  <IconInput
+                    id="signup-username"
+                    label="User Name"
+                    icon="person"
+                    name="userName"
+                    autoComplete="name"
+                    placeholder="Enter your name"
+                    value={signup.userName}
+                    onChange={setField("userName")}
                   />
-                  <TextInput
-                    label="Interests"
-                    name="interests"
-                    value={signup.interests}
-                    onChange={setField("interests")}
-                    placeholder="e.g. educational toys, puzzles"
-                  />
-                  <NumberInput
-                    label="Age"
-                    name="age"
-                    min={18}
-                    max={120}
-                    value={signup.age}
-                    onChange={setField("age")}
-                    placeholder="e.g. 32"
-                    wrapperClassName="sm:col-span-2 max-w-full sm:max-w-xs"
-                  />
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="signup-address"
+                      className={signupLabelClass}
+                    >
+                      Address
+                    </label>
+                    <div className="group relative">
+                      <div className="pointer-events-none absolute left-4 top-1/2 flex -translate-y-1/2 items-center text-slate-400 transition-colors group-focus-within:text-signup-primary">
+                        <span className="material-symbols-outlined">
+                          location_on
+                        </span>
+                      </div>
+                      <input
+                        id="signup-address"
+                        name="address"
+                        type="text"
+                        autoComplete="street-address"
+                        placeholder="City, State"
+                        value={signup.address}
+                        onChange={setField("address")}
+                        className={signupInputClass}
+                      />
+                    </div>
+                    <p className="ml-1 text-xs text-slate-400 dark:text-slate-500">
+                      Used to find toy exchanges near you.
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex shrink-0 flex-col gap-2 pt-2">
-                <button type="button" className={primaryCtaClass}>
-                  Complete signup
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStep(3)}
-                  className="w-full py-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-700"
-                >
-                  Back to step 3
-                </button>
-              </div>
+                {error ? (
+                  <p className="mt-4 text-center text-sm font-medium text-red-600 dark:text-red-400" role="alert">
+                    {error}
+                  </p>
+                ) : null}
+              </main>
+            )}
+
+            {/* In-card footer (web-safe) instead of viewport-fixed — matches centered login sheet */}
+            <div className="pointer-events-none shrink-0 bg-gradient-to-t from-signup-bg via-signup-bg/95 to-transparent p-6 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] dark:from-signup-bg-dark dark:via-signup-bg-dark/95">
+              <button
+                type="button"
+                onClick={footerAction}
+                className="pointer-events-auto flex h-14 w-full items-center justify-center rounded-xl bg-signup-primary text-base font-bold text-white shadow-[0_8px_20px_-6px_rgba(99,166,233,0.5)] transition-all hover:bg-signup-primary/90 active:scale-[0.98]"
+              >
+                {footerButtonLabel}
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
