@@ -7,7 +7,7 @@ export const exchangedToysMock = [
     title: "LEGO bricks bundle",
     imageUrl:
       "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&h=600&fit=crop",
-    receivedFrom: "The Chen family",
+    receivedFrom: "The Hussain family",
     exchangedOn: "2026-04-02",
     tradedAway: "Wooden blocks set",
   },
@@ -17,7 +17,7 @@ export const exchangedToysMock = [
     title: "Plush teddy bear",
     imageUrl:
       "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&h=600&fit=crop",
-    receivedFrom: "James K.",
+    receivedFrom: "Ahmed K.",
     exchangedOn: "2026-03-18",
     tradedAway: "Picture books bundle",
   },
@@ -27,7 +27,7 @@ export const exchangedToysMock = [
     title: "Balance bike",
     imageUrl:
       "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=600&h=600&fit=crop",
-    receivedFrom: "Maria L.",
+    receivedFrom: "Ayesha L.",
     exchangedOn: "2026-03-05",
     tradedAway: "Scooter (toddler)",
   },
@@ -37,7 +37,7 @@ export const exchangedToysMock = [
     title: "Wooden train set",
     imageUrl:
       "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=600&h=600&fit=crop",
-    receivedFrom: "Sarah M.",
+    receivedFrom: "Fatima A.",
     exchangedOn: "2026-02-20",
     tradedAway: "Puzzle collection",
   },

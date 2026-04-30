@@ -8,7 +8,7 @@ export const incomingRequestsMock = [
     toyTitle: "Lego Set",
     imageUrl:
       "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=200&h=200&fit=crop",
-    requesterName: "Sarah Jenkins",
+    requesterName: "Sana Javed",
     requesterUsername: "sarah_m",
     requesterLocation: "Austin, TX",
     requesterRating: 9.8,
@@ -23,7 +23,7 @@ export const incomingRequestsMock = [
     toyTitle: "Vintage Wooden Train",
     imageUrl:
       "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=200&h=200&fit=crop",
-    requesterName: "Alex Thompson",
+    requesterName: "Ali Tariq",
     requesterUsername: null,
     requesterLocation: "Portland, OR",
     requesterRating: 8,
@@ -37,7 +37,7 @@ export const incomingRequestsMock = [
     toyTitle: "LEGO bricks bundle",
     imageUrl:
       "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=200&h=200&fit=crop",
-    requesterName: "The Chen family",
+    requesterName: "The Hussain family",
     requesterUsername: "chen_family",
     requesterLocation: "Seattle, WA",
     requesterRating: 9.2,
@@ -52,7 +52,7 @@ export const incomingRequestsMock = [
     toyTitle: "Plush teddy bear",
     imageUrl:
       "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=200&h=200&fit=crop",
-    requesterName: "James K.",
+    requesterName: "Ahmed K.",
     requesterUsername: "james_k",
     requesterLocation: "Portland, OR",
     requesterRating: 8.6,
@@ -105,7 +105,7 @@ export const outgoingRequestsMock = [
     toyTitle: "Plush teddy bear",
     imageUrl:
       "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=200&h=200&fit=crop",
-    sellerName: "James K.",
+    sellerName: "Ahmed K.",
     sellerUsername: "james_k",
     sellerLocation: "Portland, OR",
     message: "Perfect for our toddler—thanks for listing!",
@@ -118,7 +118,7 @@ export const outgoingRequestsMock = [
     toyTitle: "Balance bike (ages 2–4)",
     imageUrl:
       "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=200&h=200&fit=crop",
-    sellerName: "Maria L.",
+    sellerName: "Ayesha L.",
     sellerUsername: "maria_l",
     sellerLocation: "Denver, CO",
     message: "",
@@ -130,8 +130,8 @@ export const outgoingRequestsMock = [
     toyId: "5",
     toyTitle: "Board game collection",
     imageUrl:
-      "https://images.unsplash.com/photo-1606503153255-59d8b8b82276?w=200&h=200&fit=crop",
-    sellerName: "David R.",
+      "https://images.unsplash.com/photo-1611996575749-79a3a250f948?w=200&h=200&fit=crop",
+    sellerName: "Bilal R.",
     sellerUsername: "david_r",
     sellerLocation: "Chicago, IL",
     message: "Interested in the strategy titles if still available.",
@@ -309,7 +309,7 @@ export const completedExchangesMock = [
     toyTitle: "Vintage Teddy Bear",
     imageUrl:
       "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=200&h=200&fit=crop",
-    partnerName: "Sarah Jenkins",
+    partnerName: "Sana Javed",
     partnerUsername: "sarah_m",
   },
   {
@@ -318,7 +318,7 @@ export const completedExchangesMock = [
     toyTitle: "Wooden Railway Set",
     imageUrl:
       "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=200&h=200&fit=crop",
-    partnerName: "Mike Chen",
+    partnerName: "Muneeb Hussain",
     partnerUsername: "chen_family",
   },
   {
@@ -327,7 +327,7 @@ export const completedExchangesMock = [
     toyTitle: "Smart Robot Kit",
     imageUrl:
       "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=200&h=200&fit=crop",
-    partnerName: "Elena Rodriguez",
+    partnerName: "Mariam Raza",
     partnerUsername: null,
   },
 ];
