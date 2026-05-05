@@ -1,38 +1,55 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { exchangedToysMock } from "@/data/exchangedToysMock";
+import { persistServerProfileFields } from "@/contexts/AuthContext";
+import { apiFetch } from "@/lib/apiClient";
 import { defaultProfile, loadProfile } from "@/lib/profile";
-import { getAllMyToys } from "@/lib/myToyListings";
+import { mapApiToyToListing } from "@/lib/mapToyListing";
 import ProfileView from "./ProfileView";
 
 export default function ProfileClient() {
   const [hydrated, setHydrated] = useState(false);
   const [profile, setProfile] = useState(defaultProfile);
+
   const [listedToys, setListedToys] = useState([]);
+  const [exchanged, setExchanged] = useState([]);
 
-  const exchanged = exchangedToysMock;
+  const load = useCallback(async () => {
+    const meRes = await apiFetch("/api/auth/me");
+    if (!meRes.ok) {
+      setProfile(loadProfile());
+      setListedToys([]);
+      setExchanged([]);
+      return;
+    }
 
-  const refreshListed = useCallback(() => {
-    setListedToys(getAllMyToys());
+    const me = await meRes.json();
+    persistServerProfileFields(me);
+    setProfile(loadProfile());
+
+    const toyRes = await apiFetch("/api/toys?mine=1");
+    const toyData = toyRes.ok ? await toyRes.json() : {};
+    const toys = Array.isArray(toyData.toys) ? toyData.toys : [];
+    setListedToys(toys.map(mapApiToyToListing));
+
+    const n =
+      typeof me.exchangesCompleted === "number" && Number.isFinite(me.exchangesCompleted)
+        ? me.exchangesCompleted
+        : 0;
+    setExchanged(Array.from({ length: Math.max(0, Math.floor(n)) }));
   }, []);
 
   useEffect(() => {
-    setProfile(loadProfile());
-    refreshListed();
-    setHydrated(true);
-  }, [refreshListed]);
+    void load().finally(() => setHydrated(true));
+  }, [load]);
 
   useEffect(() => {
     function onVisible() {
-      if (document.visibilityState === "visible") {
-        setProfile(loadProfile());
-        refreshListed();
-      }
+      if (document.visibilityState === "visible") void load();
     }
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [refreshListed]);
+  }, [load]);
 
   if (!hydrated) {
     return (

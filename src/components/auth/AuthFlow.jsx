@@ -1,15 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import SplashScreen from "./SplashScreen";
 import LoginScreen from "./LoginScreen";
 import SignupScreen from "./SignupScreen";
 
 export default function AuthFlow() {
+  const router = useRouter();
+  const { me, loading } = useAuth();
   const [currentView, setCurrentView] = useState("splash");
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    if (loading) return;
+    if (me?.id) {
+      router.replace("/toybox");
+    }
+  }, [loading, me, router]);
+
+  useEffect(() => {
+    if (loading || me?.id) return;
+
     const timer = setTimeout(() => {
       setIsVisible(false);
 
@@ -20,7 +33,7 @@ export default function AuthFlow() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [loading, me]);
 
   const navigateTo = (view) => {
     setIsVisible(false);

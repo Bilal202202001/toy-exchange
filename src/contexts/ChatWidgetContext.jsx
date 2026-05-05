@@ -4,122 +4,205 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
-import {
-  incomingRequestsChatSeed,
-  incomingRequestsMock,
-  outgoingRequestsChatSeed,
-  outgoingRequestsMock,
-} from "@/data/toyRequests";
-import { normalizeProfileUsername } from "@/lib/publicProfiles";
-
-function buildInitialMessages() {
-  const initial = {};
-  for (const req of incomingRequestsMock) {
-    initial[req.id] = [...(incomingRequestsChatSeed[req.id] ?? [])];
-  }
-  for (const req of outgoingRequestsMock) {
-    initial[req.id] = [...(outgoingRequestsChatSeed[req.id] ?? [])];
-  }
-  return initial;
-}
+import { normalizeProfileUsername } from "@/lib/profile";
+import { apiFetch } from "@/lib/apiClient";
+import { getStoredToken } from "@/lib/authToken";
 
 const ChatWidgetContext = createContext(null);
 
 export function ChatWidgetProvider({ children }) {
-  const [incoming, setIncoming] = useState(incomingRequestsMock);
-  const [messagesByRequest, setMessagesByRequest] = useState(buildInitialMessages);
+  const [incoming, setIncoming] = useState([]);
+  const [outgoing, setOutgoing] = useState([]);
+  const [completedExchanges, setCompletedExchanges] = useState([]);
+  const [messagesByRequest, setMessagesByRequest] = useState({});
   const [panelOpen, setPanelOpen] = useState(false);
-  /** 'list' shows conversation history; 'thread' shows active chat */
   const [panelView, setPanelView] = useState("list");
   const [activeThreadId, setActiveThreadId] = useState(null);
 
-  const outgoing = outgoingRequestsMock;
+  const loadExchanges = useCallback(async () => {
+    if (!getStoredToken()) {
+      setIncoming([]);
+      setOutgoing([]);
+      setCompletedExchanges([]);
+      return;
+    }
+
+    const res = await apiFetch("/api/exchanges");
+    if (!res.ok) return;
+
+    /** @type {any} */
+
+    const data = await res.json();
+
+    setIncoming(Array.isArray(data.incoming) ? data.incoming : []);
+    setOutgoing(Array.isArray(data.outgoing) ? data.outgoing : []);
+    setCompletedExchanges(Array.isArray(data.completed) ? data.completed : []);
+
+  }, []);
+
+  useEffect(() => {
+    loadExchanges();
+  }, [loadExchanges]);
 
   const getRequestById = useCallback(
-    (id) =>
-      incoming.find((r) => r.id === id) ?? outgoing.find((r) => r.id === id) ?? null,
-    [incoming, outgoing]
+
+    (id) => [...incoming, ...outgoing].find((r) => r.id === id) ?? null,
+    [incoming, outgoing],
+
   );
 
   const openWidget = useCallback(() => {
+
+    void loadExchanges();
+
     setPanelOpen(true);
+
     setPanelView("list");
+
     setActiveThreadId(null);
-  }, []);
+
+  }, [loadExchanges]);
 
   const openWidgetToThread = useCallback((requestId) => {
-    setPanelOpen(true);
-    setPanelView("thread");
-    setActiveThreadId(requestId);
-  }, []);
+    void loadExchanges();
 
-  /** Open chat: jump to thread with this user if we have one, else show history list. */
+    setPanelOpen(true);
+
+    setPanelView("thread");
+
+    setActiveThreadId(requestId);
+
+  }, [loadExchanges]);
+
   const openWidgetForPeerUsername = useCallback(
+
     (username) => {
+
       const u = normalizeProfileUsername(username);
+
       if (!u) {
+
         openWidget();
+
         return;
+
       }
+
       const inc = incoming.find(
-        (r) => normalizeProfileUsername(r.requesterUsername) === u
+        (r) => normalizeProfileUsername(r.requesterUsername) === u,
       );
+
       if (inc) {
+
         openWidgetToThread(inc.id);
+
         return;
+
       }
+
       const out = outgoing.find(
-        (r) => normalizeProfileUsername(r.sellerUsername) === u
+
+        (r) => normalizeProfileUsername(r.sellerUsername) === u,
+
       );
+
       if (out) {
+
         openWidgetToThread(out.id);
+
         return;
+
       }
+
       openWidget();
+
     },
-    [incoming, outgoing, openWidget, openWidgetToThread]
+
+    [incoming, outgoing, openWidget, openWidgetToThread],
+
   );
 
-  const closePanel = useCallback(() => {
-    setPanelOpen(false);
-  }, []);
+  const closePanel = useCallback(() => setPanelOpen(false), []);
 
   const goToList = useCallback(() => {
     setPanelView("list");
+
     setActiveThreadId(null);
+
   }, []);
 
   const selectThread = useCallback((requestId) => {
     setActiveThreadId(requestId);
+
     setPanelView("thread");
+
   }, []);
 
   const appendMessage = useCallback((requestId, text) => {
     const trimmed = text.trim();
+
     if (!trimmed) return;
+
     const row = {
       id: `local-${Date.now()}`,
       from: "me",
       body: trimmed,
       time: new Date().toISOString(),
     };
+
     setMessagesByRequest((prev) => ({
+
       ...prev,
+
       [requestId]: [...(prev[requestId] ?? []), row],
+
     }));
+
   }, []);
 
-  const setRequestStatus = useCallback((id, status) => {
-    setIncoming((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
-  }, []);
+  const setRequestStatus = useCallback(
+
+    async (id, uiStatus) => {
+
+      const status =
+
+        uiStatus === "accepted"
+
+          ? "accepted"
+
+          : uiStatus === "declined"
+
+            ? "declined"
+
+            : null;
+
+      if (!status) return;
+
+      const res = await apiFetch(`/api/exchanges/${id}`, {
+
+        method: "PATCH",
+
+        body: JSON.stringify({ status }),
+
+      });
+
+      if (res.ok) await loadExchanges();
+
+    },
+
+    [loadExchanges],
+
+  );
 
   const value = useMemo(
     () => ({
       incoming,
       outgoing,
+      completedExchanges,
       messagesByRequest,
       setMessagesByRequest,
       panelOpen,
@@ -137,10 +220,12 @@ export function ChatWidgetProvider({ children }) {
       appendMessage,
       setRequestStatus,
       getRequestById,
+      loadExchanges,
     }),
     [
       incoming,
       outgoing,
+      completedExchanges,
       messagesByRequest,
       panelOpen,
       panelView,
@@ -154,7 +239,8 @@ export function ChatWidgetProvider({ children }) {
       appendMessage,
       setRequestStatus,
       getRequestById,
-    ]
+      loadExchanges,
+    ],
   );
 
   return (

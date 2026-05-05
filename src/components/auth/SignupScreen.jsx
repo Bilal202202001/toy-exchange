@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { profileInitials } from "@/lib/profile";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiFetch } from "@/lib/apiClient";
 
 const TOTAL_STEPS = 2;
 
@@ -63,11 +65,14 @@ const emptySignup = () => ({
 
 export default function SignupScreen({ onNavigate }) {
   const router = useRouter();
+  const { registerAccount, refreshMe } = useAuth();
   const [step, setStep] = useState(1);
   const [signup, setSignup] = useState(emptySignup);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const avatarInputRef = useRef(null);
+  const selectedAvatarFileRef = useRef(null);
 
   const setField =
     (key) =>
@@ -91,6 +96,7 @@ export default function SignupScreen({ onNavigate }) {
     const file = files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) return;
+    selectedAvatarFileRef.current = file;
     const url = URL.createObjectURL(file);
     setAvatarPreview((prev) => {
       if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
@@ -113,20 +119,98 @@ export default function SignupScreen({ onNavigate }) {
       setError("Passwords do not match.");
       return;
     }
+
+    if (signup.password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
     setStep(2);
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
+
     setError("");
+
     if (!signup.userName.trim()) {
+
       setError("Please enter your name.");
+
       return;
+
     }
+
     if (!signup.address.trim()) {
+
       setError("Please enter your address.");
+
       return;
+
     }
+
+    setBusy(true);
+
+    const reg = await registerAccount({
+
+      email: signup.email.trim().toLowerCase(),
+
+      password: signup.password,
+
+      name: signup.userName.trim(),
+
+      phone: signup.phone.trim(),
+
+      location: signup.address.trim(),
+
+    });
+
+    if (!reg.ok) {
+
+      setError(reg.error || "Could not register.");
+
+      setBusy(false);
+
+      return;
+
+    }
+
+    const f = selectedAvatarFileRef.current;
+
+    if (f) {
+
+      const fd = new FormData();
+
+      fd.append("file", f);
+
+      const up = await apiFetch("/api/upload", {
+
+        method: "POST",
+
+        body: fd,
+
+      });
+
+      const uj = await up.json().catch(() => ({}));
+
+      if (up.ok && uj.url) {
+
+        await apiFetch("/api/profile", {
+
+          method: "PATCH",
+
+          body: JSON.stringify({ avatarUrl: uj.url }),
+
+        });
+
+        await refreshMe();
+
+      }
+
+    }
+
+    setBusy(false);
+
     router.push("/toybox");
+
   };
 
   const initials =
@@ -178,14 +262,14 @@ export default function SignupScreen({ onNavigate }) {
                 <div
                   className={
                     step === 1
-                      ? "h-2 flex-1 rounded-full bg-signup-primary shadow-[0_0_10px_rgba(99,166,233,0.4)]"
+                      ? "h-2 flex-1 rounded-full bg-signup-primary shadow-[0_0_10px_rgba(0,196,217,0.35)]"
                       : "h-2 flex-1 rounded-full bg-signup-primary/90"
                   }
                 />
                 <div
                   className={
                     step === 2
-                      ? "h-2 flex-1 rounded-full bg-signup-primary shadow-[0_0_10px_rgba(99,166,233,0.4)]"
+                      ? "h-2 flex-1 rounded-full bg-signup-primary shadow-[0_0_10px_rgba(0,196,217,0.35)]"
                       : "h-2 flex-1 rounded-full bg-slate-200 dark:bg-slate-700"
                   }
                 />
@@ -365,8 +449,12 @@ export default function SignupScreen({ onNavigate }) {
             <div className="pointer-events-none shrink-0 bg-gradient-to-t from-signup-bg via-signup-bg/95 to-transparent p-6 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] dark:from-signup-bg-dark dark:via-signup-bg-dark/95">
               <button
                 type="button"
+
+                disabled={busy}
+
                 onClick={footerAction}
-                className="pointer-events-auto flex h-14 w-full items-center justify-center rounded-xl bg-signup-primary text-base font-bold text-white shadow-[0_8px_20px_-6px_rgba(99,166,233,0.5)] transition-all hover:bg-signup-primary/90 active:scale-[0.98]"
+
+                className="pointer-events-auto flex h-14 w-full items-center justify-center rounded-xl bg-signup-primary text-base font-bold text-white shadow-[0_8px_20px_-6px_rgba(0,196,217,0.45)] transition-all hover:bg-signup-primary/90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
               >
                 {footerButtonLabel}
               </button>

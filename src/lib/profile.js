@@ -40,6 +40,12 @@ export function saveProfile(partial) {
   return next;
 }
 
+/** Lowercase trimmed username for URLs and comparisons (distinct from slugifyUsername). */
+export function normalizeProfileUsername(s) {
+  if (!s || typeof s !== "string") return "";
+  return s.trim().toLowerCase();
+}
+
 export function slugifyUsername(s) {
   return s
     .toLowerCase()

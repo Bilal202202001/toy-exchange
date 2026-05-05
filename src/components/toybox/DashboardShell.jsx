@@ -5,11 +5,14 @@ import { usePathname } from "next/navigation";
 import { ChatWidgetProvider } from "@/contexts/ChatWidgetContext";
 import GlobalChatWidget from "@/components/toybox/GlobalChatWidget";
 import { useEffect, useRef, useState } from "react";
+
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Home,
   CirclePlus,
   Package,
   Inbox,
+  UserPlus,
   User,
   Search,
   Bell,
@@ -24,11 +27,15 @@ const nav = [
   { href: "/toybox/my-toys/add", label: "Add Toy", icon: CirclePlus },
   { href: "/toybox/my-toys", label: "My Toys", icon: Package },
   { href: "/toybox/requests", label: "Requests", icon: Inbox },
+  { href: "/toybox/friends", label: "Friends", icon: UserPlus },
   { href: "/toybox/profile", label: "Profile", icon: User },
 ];
 
 export default function DashboardShell({ children }) {
+
   const pathname = usePathname();
+
+  const { signOutUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -49,7 +56,10 @@ export default function DashboardShell({ children }) {
 
   const handleLogout = () => {
     setProfileOpen(false);
+    signOutUser();
+
     window.location.href = "/";
+
   };
 
   if (pathname === "/toybox/request-sent") {
@@ -120,6 +130,7 @@ export default function DashboardShell({ children }) {
               ![
                 "my-toys",
                 "requests",
+                "friends",
                 "profile",
                 "request-sent",
                 "exchange-proposal",
@@ -135,6 +146,8 @@ export default function DashboardShell({ children }) {
                 pathname === "/toybox/my-toys" ||
                 (pathname.startsWith("/toybox/my-toys/") &&
                   pathname !== "/toybox/my-toys/add");
+            } else if (href === "/toybox/friends") {
+              active = pathname === "/toybox/friends";
             } else {
               active =
                 pathname === href || pathname.startsWith(`${href}/`);

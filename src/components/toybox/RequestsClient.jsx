@@ -4,10 +4,6 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Inbox, MessageCircle, Send } from "lucide-react";
-import {
-  outgoingRequestsMock,
-  completedExchangesMock,
-} from "@/data/toyRequests";
 import { useRouter } from "next/navigation";
 import { useChatWidget } from "@/contexts/ChatWidgetContext";
 
@@ -59,10 +55,12 @@ function StatusBadge({ status }) {
 }
 
 function CompletedExchangeCard({ item }) {
+  const base =
+    item.partnerUsername != null ? `/toybox/profile/${item.partnerUsername}` : null;
   const rateHref =
-    item.partnerUsername != null
-      ? `/toybox/profile/${item.partnerUsername}`
-      : undefined;
+    base != null && item.exchangeId
+      ? `${base}?exchange=${encodeURIComponent(item.exchangeId)}`
+      : base ?? undefined;
 
   return (
     <li className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -84,7 +82,7 @@ function CompletedExchangeCard({ item }) {
             <div className="flex items-start justify-between gap-3">
               <Link
                 href={`/toybox/${item.toyId}`}
-                className="truncate text-base font-bold text-slate-800 transition-colors hover:text-blue-600 dark:text-slate-100 dark:hover:text-blue-400"
+                className="truncate text-base font-bold text-slate-800 transition-colors hover:text-primary dark:text-slate-100 dark:hover:text-[#80deea]"
               >
                 {item.toyTitle}
               </Link>
@@ -113,14 +111,14 @@ function CompletedExchangeCard({ item }) {
           {rateHref ? (
             <Link
               href={rateHref}
-              className="flex w-full items-center justify-center rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition-colors hover:bg-blue-700 active:opacity-90"
+              className="flex w-full items-center justify-center rounded-xl bg-primary py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(0,196,217,0.25)] transition-colors hover:bg-primary-hover active:opacity-90"
             >
               Rate Member
             </Link>
           ) : (
             <button
               type="button"
-              className="w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition-colors hover:bg-blue-700 active:opacity-90"
+              className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(0,196,217,0.25)] transition-colors hover:bg-primary-hover active:opacity-90"
             >
               Rate Member
             </button>
@@ -145,7 +143,7 @@ function IncomingForToyCard({ req, index, setRequestStatus }) {
       <Link
         href={`/toybox/profile/${req.requesterUsername}`}
         onClick={(e) => e.stopPropagation()}
-        className="font-semibold text-slate-700 underline-offset-2 hover:text-blue-600 hover:underline dark:text-slate-300 dark:hover:text-blue-400"
+        className="font-semibold text-slate-700 underline-offset-2 hover:text-primary hover:underline dark:text-slate-300 dark:hover:text-[#80deea]"
       >
         {req.requesterName}
       </Link>
@@ -181,7 +179,7 @@ function IncomingForToyCard({ req, index, setRequestStatus }) {
       <div
         role="button"
         tabIndex={0}
-        className="-m-[1px] cursor-pointer rounded-2xl p-4 text-left outline-none transition-colors hover:bg-slate-50/90 focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-slate-800/60 dark:focus-visible:ring-blue-400"
+        className="-m-[1px] cursor-pointer rounded-2xl p-4 text-left outline-none transition-colors hover:bg-slate-50/90 focus-visible:ring-2 focus-visible:ring-primary dark:hover:bg-slate-800/60 dark:focus-visible:ring-[#4dd0e1]"
         onClick={openDetail}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -238,17 +236,17 @@ function IncomingForToyCard({ req, index, setRequestStatus }) {
             className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50 active:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 dark:active:bg-slate-800"
             onClick={(e) => {
               e.stopPropagation();
-              setRequestStatus(req.id, "declined");
+              void setRequestStatus(req.id, "declined");
             }}
           >
             Decline
           </button>
           <button
             type="button"
-            className="flex-1 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition-colors hover:bg-blue-700 active:opacity-90"
+            className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(0,196,217,0.25)] transition-colors hover:bg-primary-hover active:opacity-90"
             onClick={(e) => {
               e.stopPropagation();
-              setRequestStatus(req.id, "accepted");
+              void setRequestStatus(req.id, "accepted");
             }}
           >
             Accept
@@ -262,9 +260,8 @@ function IncomingForToyCard({ req, index, setRequestStatus }) {
 export default function RequestsClient() {
   const [phase, setPhase] = useState("pending"); // pending | completed
   const [tab, setTab] = useState("incoming");
-  const { incoming, openWidgetToThread, setRequestStatus } = useChatWidget();
-
-  const outgoing = outgoingRequestsMock;
+  const { incoming, outgoing, completedExchanges, openWidgetToThread, setRequestStatus } =
+    useChatWidget();
 
   const incomingCount = incoming.length;
 
@@ -331,13 +328,13 @@ export default function RequestsClient() {
 
       {phase === "completed" && (
         <div className="mt-8 space-y-4" role="tabpanel" aria-label="Completed exchanges">
-          {completedExchangesMock.length === 0 ? (
+          {completedExchanges.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-14 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
               No completed exchanges yet. When a swap finishes, it will show up here.
             </p>
           ) : (
             <ul className="grid gap-4 sm:grid-cols-1 lg:grid-cols-1 xl:grid-cols-2 xl:gap-6">
-              {completedExchangesMock.map((item) => (
+              {completedExchanges.map((item) => (
                 <CompletedExchangeCard key={item.id} item={item} />
               ))}
             </ul>

@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { getAllMyToys } from "@/lib/myToyListings";
+import { apiFetch } from "@/lib/apiClient";
+import { isMongoId, mapApiToyToListing } from "@/lib/mapToyListing";
 
 function getDetail(details, ...labelHints) {
   if (!details?.length) return "";
@@ -51,35 +52,110 @@ function formatEstPrice(worth) {
 }
 
 function firstImageSrc(toy) {
-  const img =
-    toy?.images?.[0] ??
-    toy?.imageUrl ??
-    "";
+  const img = toy?.images?.[0] ?? toy?.imageUrl ?? "";
   return typeof img === "string" ? img : "";
 }
 
-export default function ExchangeProposalClient({ listing }) {
+export default function ExchangeProposalClient({ requestedListingId }) {
   const router = useRouter();
+
+  const [listing, setListing] = useState(/** @type {any} */ null);
+  const [listingError, setListingError] = useState(/** @type {string | null} */ null);
+  const [myToys, setMyToys] = useState([]);
+  const [myToysReady, setMyToysReady] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setListing(null);
+      setListingError(null);
+      try {
+        if (!isMongoId(requestedListingId)) {
+          if (!cancelled) setListingError("Listing not found.");
+          return;
+        }
+        const res = await apiFetch(
+          "/api/toys/" + encodeURIComponent(requestedListingId),
+        );
+        if (!res.ok) {
+          if (!cancelled) setListingError("Listing not found.");
+          return;
+        }
+        const data = await res.json();
+        if (!cancelled) setListing(mapApiToyToListing(data.toy));
+      } catch {
+        if (!cancelled) setListingError("Could not load listing.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [requestedListingId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setMyToysReady(false);
+      const res = await apiFetch("/api/toys?mine=1");
+      if (!res.ok || cancelled) {
+        if (!cancelled) setMyToysReady(true);
+        return;
+      }
+      /** @type {{ toys?: unknown[] }} */
+      const data = await res.json();
+      const toys = Array.isArray(data.toys)
+        ? data.toys.map((t) => mapApiToyToListing(t))
+        : [];
+      if (cancelled) return;
+      setMyToys(toys);
+      setSelectedId((prev) =>
+        toys.length
+          ? prev && toys.some((t) => t.id === prev)
+            ? prev
+            : toys[0].id
+          : null,
+      );
+      setMyToysReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!listing && !listingError) {
+    return (
+      <div className="h-64 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+    );
+  }
+
+  if (listingError || !listing) {
+    return (
+      <div className="rounded-2xl border border-slate-100 bg-white px-6 py-14 text-center text-slate-800 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+        <p className="text-lg font-semibold">Could not open proposal</p>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          {listingError || "Listing not found."}
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push("/toybox")}
+          className="mt-6 font-semibold text-[#00C4D9] hover:text-[#00ACC1]"
+        >
+          Back to home
+        </button>
+      </div>
+    );
+  }
+
   const { title, details, listedBy } = listing;
 
   const requestedImage = firstImageSrc(listing);
   const requestedWorth = getDetail(details, "worth", "estimated");
   const conditionRaw = getDetail(details, "condition");
   const requestedCondition = deriveConditionMetric(conditionRaw).label;
-
-  const [myToys, setMyToys] = useState([]);
-  const [mounted, setMounted] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    const toys = getAllMyToys();
-    setMyToys(toys);
-    setSelectedId((prev) =>
-      toys.length ? (prev && toys.some((t) => t.id === prev) ? prev : toys[0].id) : null,
-    );
-    setMounted(true);
-  }, []);
 
   const selectedToy = useMemo(
     () => myToys.find((t) => t.id === selectedId) ?? null,
@@ -92,6 +168,9 @@ export default function ExchangeProposalClient({ listing }) {
 
   const seller = (listedBy || "the seller").trim();
 
+  const canSubmitMongo =
+    myToysReady && !!selectedToy && isMongoId(requestedListingId);
+
   const goBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
@@ -100,8 +179,24 @@ export default function ExchangeProposalClient({ listing }) {
     router.push(`/toybox/${listing.id}`);
   };
 
-  const submit = () => {
-    if (!selectedToy) return;
+  const submit = async () => {
+    setSubmitError("");
+    if (!canSubmitMongo) return;
+    setSubmitting(true);
+    const res = await apiFetch("/api/exchanges", {
+      method: "POST",
+      body: JSON.stringify({
+        requestedToyListingId: requestedListingId,
+        offeredToyListingId: selectedToy?.id,
+        message,
+      }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setSubmitting(false);
+    if (!res.ok) {
+      setSubmitError(typeof json?.error === "string" ? json.error : "Request failed");
+      return;
+    }
     router.push(`/toybox/request-sent?name=${encodeURIComponent(seller)}`);
   };
 
@@ -141,10 +236,10 @@ export default function ExchangeProposalClient({ listing }) {
       <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[minmax(0,1fr),minmax(280px,400px)] lg:items-start xl:max-w-[1200px] xl:gap-12">
         <div className="custom-scrollbar min-w-0 space-y-8">
           <section className="space-y-3">
-            <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-blue-600">
+            <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-primary-muted">
               You are requesting
             </p>
-            <div className="flex items-center gap-4 rounded-[1.25rem] border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-800/50 dark:bg-blue-900/10">
+            <div className="flex items-center gap-4 rounded-[1.25rem] border border-primary-border bg-primary-soft/60 p-4 dark:border-teal-800/45 dark:bg-teal-950/25">
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1.25rem] shadow-sm">
                 {requestedImage ? (
                   <Image
@@ -168,11 +263,11 @@ export default function ExchangeProposalClient({ listing }) {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Est. Value: {formatEstPrice(requestedWorth)}
                 </p>
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-white px-2.5 py-1 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                  <span className="material-symbols-outlined text-[16px] text-blue-600">
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary-border bg-white px-2.5 py-1 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                  <span className="material-symbols-outlined text-[16px] text-primary">
                     check_circle
                   </span>
-                  <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                  <span className="text-[11px] font-semibold text-primary dark:text-[#80deea]">
                     Condition: {requestedCondition}
                   </span>
                 </div>
@@ -190,13 +285,13 @@ export default function ExchangeProposalClient({ listing }) {
                   Choose one of your items to trade
                 </p>
               </div>
-              <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-400">
-                {mounted ? `${myToys.length} Available` : "—"}
+              <span className="rounded-full border border-primary-border bg-primary-soft px-3 py-1 text-xs font-bold text-primary-muted dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-[#80deea]">
+                {myToysReady ? `${myToys.length} Available` : "—"}
               </span>
             </div>
 
             <div className="space-y-3">
-              {!mounted ? (
+              {!myToysReady ? (
                 <div className="h-28 animate-pulse rounded-[1.25rem] bg-slate-100 dark:bg-slate-800" />
               ) : myToys.length === 0 ? (
                 <p className="rounded-[1.25rem] border border-dashed border-slate-300 bg-white p-5 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
@@ -217,7 +312,7 @@ export default function ExchangeProposalClient({ listing }) {
                       key={toy.id}
                       className={`relative flex cursor-pointer items-center gap-4 rounded-[1.25rem] border-2 bg-white p-4 shadow-sm transition-all dark:bg-slate-800 ${
                         selected
-                          ? "border-blue-600"
+                          ? "border-primary"
                           : "border-slate-100 hover:border-slate-200 dark:border-slate-800 dark:hover:border-slate-600"
                       }`}
                     >
@@ -252,7 +347,7 @@ export default function ExchangeProposalClient({ listing }) {
                         <p
                           className={`mt-1 text-sm ${
                             selected
-                              ? "font-bold text-blue-600 dark:text-blue-400"
+                              ? "font-bold text-primary dark:text-[#80deea]"
                               : "font-medium text-slate-600 dark:text-slate-400"
                           }`}
                         >
@@ -262,7 +357,7 @@ export default function ExchangeProposalClient({ listing }) {
                       <div
                         className={`relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                           selected
-                            ? "border-blue-600 bg-blue-600 dark:border-blue-600"
+                            ? "border-primary bg-primary dark:border-primary"
                             : "border-slate-300 dark:border-slate-600"
                         }`}
                       >
@@ -295,7 +390,7 @@ export default function ExchangeProposalClient({ listing }) {
                   onChange={(e) => setMessage(e.target.value)}
                   rows={3}
                   placeholder="Add a friendly message (optional)..."
-                  className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-900 shadow-inner outline-none transition-all placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-900 shadow-inner outline-none transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/25 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-100 dark:placeholder:text-slate-500"
                 />
                 <div className="pointer-events-none absolute bottom-3 right-4 flex items-center gap-1 opacity-40">
                   <span className="material-symbols-outlined text-sm">
@@ -304,6 +399,12 @@ export default function ExchangeProposalClient({ listing }) {
                 </div>
               </div>
             </div>
+
+            {submitError ? (
+              <p className="mb-4 text-sm font-medium text-red-600 dark:text-red-400">
+                {submitError}
+              </p>
+            ) : null}
 
             <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-5 dark:border-slate-700">
               <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -316,9 +417,9 @@ export default function ExchangeProposalClient({ listing }) {
 
             <button
               type="button"
-              disabled={!selectedToy}
+              disabled={!canSubmitMongo || submitting}
               onClick={submit}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 py-4 font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:bg-blue-600/95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-primary py-4 font-bold text-white shadow-[0_12px_28px_rgba(0,196,217,0.35)] transition-all hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Request Exchange
               <span className="material-symbols-outlined leading-none">send</span>

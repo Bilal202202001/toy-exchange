@@ -69,7 +69,7 @@ function TenthScaleVisual({ value }) {
   return (
     <div className="relative flex h-2 items-center rounded-full bg-slate-100">
       <div
-        className="absolute left-0 top-0 h-full rounded-full bg-blue-600"
+        className="absolute left-0 top-0 h-full rounded-full bg-primary"
         style={{ width: `${pct}%` }}
       />
       <div className="z-10 flex w-full justify-between px-1">
@@ -78,7 +78,7 @@ function TenthScaleVisual({ value }) {
             key={i}
             className={`h-1.5 w-1.5 shrink-0 rounded-full ${
               i === activeDot
-                ? "bg-white ring-2 ring-blue-600"
+                ? "bg-white ring-2 ring-primary"
                 : "bg-slate-300"
             }`}
           />
@@ -143,7 +143,7 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
           {badgeText ? (
             <div className="absolute left-4 top-[4.5rem] z-10 sm:left-14 lg:left-24">
               <div className="rounded-full bg-white/90 px-3 py-1 shadow-sm backdrop-blur-md dark:bg-slate-900/80">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary dark:text-[#80deea]">
                   {badgeText}
                 </span>
               </div>
@@ -165,7 +165,7 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
                   {ownerUsername ? (
                     <Link
                       href={`/toybox/profile/${ownerUsername}`}
-                      className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400"
+                      className="text-sm font-medium hover:text-primary dark:hover:text-[#80deea]"
                     >
                       {listedBy}
                     </Link>
@@ -175,7 +175,7 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
                 </div>
               </div>
               <div className="text-right">
-                <span className="text-xl font-extrabold text-blue-600 dark:text-blue-400">
+                <span className="text-xl font-extrabold text-primary dark:text-[#80deea]">
                   {priceDisplay}
                 </span>
                 <p className="text-[10px] font-bold uppercase tracking-tighter text-slate-400">
@@ -186,11 +186,11 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
 
             <div className="mb-6 flex flex-wrap gap-2">
               {ageRange ? (
-                <div className="flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-1.5 dark:bg-blue-950/40">
-                  <span className="material-symbols-outlined text-lg text-blue-600 dark:text-blue-400">
+                <div className="flex items-center gap-2 rounded-xl bg-primary-soft px-3 py-1.5 dark:bg-teal-950/45">
+                  <span className="material-symbols-outlined text-lg text-primary dark:text-[#80deea]">
                     child_care
                   </span>
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                  <span className="text-xs font-bold text-primary dark:text-[#80deea]">
                     {ageRange}
                   </span>
                 </div>
@@ -207,7 +207,7 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
 
             <div className="mb-6">
               <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
-                <span className="material-symbols-outlined text-lg text-blue-600 dark:text-blue-400">
+                <span className="material-symbols-outlined text-lg text-primary dark:text-[#80deea]">
                   swap_horiz
                 </span>
                 Expected Exchange
@@ -244,7 +244,7 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
 
           <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
             <h2 className="mb-6 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
-              <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">
+              <span className="material-symbols-outlined text-primary dark:text-[#80deea]">
                 verified
               </span>
               Trust &amp; Quality
@@ -255,7 +255,7 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Toy Condition Rating
                   </span>
-                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                  <span className="text-sm font-bold text-primary dark:text-[#80deea]">
                     {conditionMetric.label}
                   </span>
                 </div>
@@ -266,7 +266,7 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Member Reliability
                   </span>
-                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                  <span className="text-sm font-bold text-primary dark:text-[#80deea]">
                     {memberMetric.label}
                   </span>
                 </div>
@@ -279,7 +279,7 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
             <button
               type="button"
               onClick={handleRequest}
-              className="flex w-full cursor-pointer items-center justify-between rounded-2xl bg-blue-600 p-6 text-left text-white shadow-md transition-transform duration-200 hover:bg-blue-600/95 active:scale-[0.98] dark:bg-blue-600"
+              className="flex w-full cursor-pointer items-center justify-between rounded-2xl bg-primary p-6 text-left text-white shadow-[0_12px_28px_rgba(0,196,217,0.35)] transition-transform duration-200 hover:bg-primary-hover active:scale-[0.98]"
             >
               <div className="flex flex-col">
                 <span className="text-sm font-bold">Request Exchange</span>

@@ -1,32 +1,126 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
 import ToyListingCard from "./ToyListingCard";
-import { toyListings } from "@/data/toyListings";
+
+import { apiFetch } from "@/lib/apiClient";
+
+import { mapApiToyToListing } from "@/lib/mapToyListing";
 
 const PAGE_SIZE = 6;
 
 export default function ToyListingsFeed() {
+
+  const [listings, setListings] = useState([]);
+
   const [page, setPage] = useState(1);
 
-  const totalPages = Math.max(1, Math.ceil(toyListings.length / PAGE_SIZE));
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+
+    let cancelled = false;
+
+    (async () => {
+
+      setLoading(true);
+
+      const res = await apiFetch("/api/toys");
+
+      if (!res.ok) {
+
+        if (!cancelled)
+
+          setListings([]);
+
+      } else {
+
+        /** @type {{ toys?: unknown[] }} */
+
+        const data = await res.json();
+
+        const rows = Array.isArray(data.toys)
+
+          ? data.toys.map((t) => mapApiToyToListing(t))
+
+          : [];
+
+        if (!cancelled) setListings(rows);
+
+      }
+
+      if (!cancelled) setLoading(false);
+
+    })();
+
+    return () => {
+
+      cancelled = true;
+
+    };
+
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(listings.length / PAGE_SIZE));
 
   const pageItems = useMemo(() => {
+
     const start = (page - 1) * PAGE_SIZE;
-    return toyListings.slice(start, start + PAGE_SIZE);
-  }, [page]);
+
+    return listings.slice(start, start + PAGE_SIZE);
+
+  }, [page, listings]);
+
+  useEffect(() => {
+
+    setPage((p) => Math.min(Math.max(1, p), totalPages));
+
+  }, [totalPages]);
 
   const goTo = (next) => {
+
     setPage((p) => Math.min(Math.max(1, next), totalPages));
+
   };
 
+  if (loading) {
+
+    return (
+      <div className="mt-8 h-40 animate-pulse rounded-2xl bg-slate-100" aria-hidden />
+    );
+
+  }
+
+  if (listings.length === 0) {
+
+    return (
+
+      <p className="mt-8 rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center text-sm text-slate-500">
+
+        No toy listings yet. Connect with families and add friends — when they list toys you will see
+
+        them here.
+
+      </p>
+
+    );
+
+  }
+
   return (
+
     <div className="mt-8 w-full">
+
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+
         {pageItems.map((listing) => (
+
           <ToyListingCard key={listing.id} listing={listing} />
+
         ))}
+
       </div>
 
       {totalPages > 1 && (
@@ -38,15 +132,22 @@ export default function ToyListingsFeed() {
             Page {page} of {totalPages}
             <span className="text-slate-400">
               {" "}
-              · {toyListings.length} listings
+              · {listings.length} listings
+
             </span>
+
           </p>
 
           <div className="order-1 flex items-center gap-2 sm:order-2">
+
             <button
+
               type="button"
+
               onClick={() => goTo(page - 1)}
+
               disabled={page <= 1}
+
               className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-[#e0f7fa] hover:border-[#B2EBF2] disabled:pointer-events-none disabled:opacity-40"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -71,17 +172,30 @@ export default function ToyListingsFeed() {
             </div>
 
             <button
+
               type="button"
+
               onClick={() => goTo(page + 1)}
+
               disabled={page >= totalPages}
+
               className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-[#e0f7fa] hover:border-[#B2EBF2] disabled:pointer-events-none disabled:opacity-40"
             >
               Next
+
               <ChevronRight className="h-4 w-4" />
+
             </button>
+
           </div>
+
         </nav>
+
       )}
+
     </div>
+
   );
+
 }
+

@@ -12,13 +12,18 @@
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-plus-jakarta-sans);
 
-  --color-primary: #30bae8;
+  /* ToyBox teal (dashboard, CTAs, links) */
+  --color-primary: #00c4d9;
+  --color-primary-hover: #00acc1;
+  --color-primary-soft: #e0f7fa;
+  --color-primary-muted: #00838f;
+  --color-primary-border: #b2ebf2;
   --color-background-light: #f6f7f8;
   --color-background-dark: #111d21;
 
-  /* Auth login (soft pastel blue — matches design mock) */
-  --color-auth-primary: #93c5fd;
-  --color-auth-primary-dark: #60a5fa;
+  /* Auth login — teal-tinted to match ToyBox */
+  --color-auth-primary: #80deea;
+  --color-auth-primary-dark: #00c4d9;
   --color-auth-bg: #f8fafc;
   --color-auth-bg-dark: #0f172a;
 
@@ -26,20 +31,20 @@
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
 
-  /* Signup flow (screens match design mock — #63a6e9 primary) */
-  --color-signup-primary: #63a6e9;
+  /* Signup flow — teal primary (matches ToyBox dashboard) */
+  --color-signup-primary: #00c4d9;
   --color-signup-bg: #f6f7f8;
   --color-signup-bg-dark: #111921;
   --color-signup-surface: #ffffff;
   --color-signup-surface-dark: #1a2632;
 
   /* Add toy form (matches design mock) */
-  --color-add-toy-primary: #2b8cee;
+  --color-add-toy-primary: #00c4d9;
   --color-add-toy-bg: #f6f7f8;
   --color-add-toy-bg-dark: #101922;
 
   /* Request-sent success screen */
-  --color-request-sent-primary: #0657f9;
+  --color-request-sent-primary: #00c4d9;
   --color-request-sent-bg: #f5f6f8;
   --color-request-sent-bg-dark: #0f1623;
 }

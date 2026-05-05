@@ -44,13 +44,13 @@ export default function RequestSentClient() {
           <div className="absolute inset-0 animate-pulse rounded-full bg-request-sent-primary/10" />
           <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl border-4 border-white bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800">
             <div className="flex items-center justify-center">
-              <div className="z-0 flex h-32 w-32 -rotate-6 items-center justify-center rounded-lg bg-blue-100 shadow-md dark:bg-blue-900/30">
+              <div className="z-0 flex h-32 w-32 -rotate-6 items-center justify-center rounded-lg bg-primary-soft shadow-md dark:bg-teal-950/40">
                 <span className="material-symbols-outlined text-6xl leading-none text-request-sent-primary">
                   card_giftcard
                 </span>
               </div>
-              <div className="z-10 -ml-5 flex h-32 w-32 rotate-6 items-center justify-center rounded-lg border-2 border-white bg-indigo-100 shadow-md dark:border-slate-800 dark:bg-indigo-900/30">
-                <span className="material-symbols-outlined text-6xl leading-none text-indigo-600 dark:text-indigo-400">
+              <div className="z-10 -ml-5 flex h-32 w-32 rotate-6 items-center justify-center rounded-lg border-2 border-white bg-primary-soft shadow-md dark:border-slate-800 dark:bg-teal-950/35">
+                <span className="material-symbols-outlined text-6xl leading-none text-primary dark:text-[#80deea]">
                   handshake
                 </span>
               </div>

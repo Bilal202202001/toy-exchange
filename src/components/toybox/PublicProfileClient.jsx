@@ -2,79 +2,99 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { exchangedToysMock } from "@/data/exchangedToysMock";
-import {
-  getDirectoryProfile,
-  getPublicListingsForUsername,
-  normalizeProfileUsername,
-} from "@/lib/publicProfiles";
-import { defaultProfile, loadProfile } from "@/lib/profile";
-import { getAllMyToys } from "@/lib/myToyListings";
+import { useSearchParams } from "next/navigation";
+import { normalizeProfileUsername, defaultProfile, loadProfile, slugifyUsername } from "@/lib/profile";
+import { apiFetch } from "@/lib/apiClient";
+import { mapApiToyToListing } from "@/lib/mapToyListing";
 import ProfileView from "./ProfileView";
 
 export default function PublicProfileClient({ username: usernameParam }) {
+  const searchParams = useSearchParams();
+  const exchangeParamRaw = searchParams.get("exchange");
+  const exchangeParam =
+    typeof exchangeParamRaw === "string" && /^[a-f0-9]{24}$/i.test(exchangeParamRaw)
+      ? exchangeParamRaw
+      : null;
+
   const [hydrated, setHydrated] = useState(false);
   const [profile, setProfile] = useState(defaultProfile);
   const [listedToys, setListedToys] = useState([]);
   const [exchanged, setExchanged] = useState([]);
+  const [ratingTargetUserId, setRatingTargetUserId] = useState(null);
   const [isSelf, setIsSelf] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
   const normalizedParam = useMemo(
     () => normalizeProfileUsername(usernameParam),
-    [usernameParam]
+    [usernameParam],
   );
 
-  const refresh = useCallback(() => {
-    const me = loadProfile();
-    const meU = normalizeProfileUsername(me.username);
+  const refresh = useCallback(async () => {
     if (!normalizedParam) {
       setNotFound(true);
       setHydrated(true);
       return;
     }
 
-    if (meU === normalizedParam) {
-      setIsSelf(true);
-      setNotFound(false);
-      setProfile(me);
-      setListedToys(getAllMyToys());
-      setExchanged(exchangedToysMock);
-      setHydrated(true);
-      return;
-    }
-
-    setIsSelf(false);
-    const dir = getDirectoryProfile(normalizedParam);
-    if (!dir) {
+    const res = await apiFetch(`/api/users/${encodeURIComponent(normalizedParam)}`);
+    if (res.status === 404 || !res.ok) {
       setNotFound(true);
       setHydrated(true);
       return;
     }
 
+    const data = await res.json();
+    /** @type {any} */
+    const p = data.profile;
+    if (!p?.username) {
+      setNotFound(true);
+      setHydrated(true);
+      return;
+    }
+
+    const selfVisit = !!data.isSelf;
+    const meU = slugifyUsername(loadProfile().username || "");
+    setIsSelf(selfVisit || meU === normalizeProfileUsername(p.username));
+
+    setRatingTargetUserId(typeof p.id === "string" ? p.id : null);
     setNotFound(false);
+
     setProfile({
-      displayName: dir.displayName,
-      username: dir.username,
-      bio: dir.bio,
-      location: dir.location,
-      avatarUrl: dir.avatarUrl,
-      following: dir.following,
-      followers: dir.followers,
-      likes: dir.likes,
+      displayName: p.displayName ?? p.username ?? "",
+      username: slugifyUsername(p.username || ""),
+      bio: p.bio || "",
+      location: p.location || "",
+      email: p.email ?? "",
+      phone: p.phone ?? "",
+      avatarUrl: p.avatarUrl ?? null,
+      following: typeof p.following === "number" ? p.following : 0,
+      followers: typeof p.followers === "number" ? p.followers : 0,
+      likes: typeof p.likes === "number" ? p.likes : 0,
+      reliability:
+        typeof p.reliability === "number" && Number.isFinite(p.reliability)
+          ? p.reliability
+          : Number(p.reliabilityAvg ?? 8),
     });
-    setListedToys(getPublicListingsForUsername(normalizedParam));
-    setExchanged(dir.exchanged ?? []);
+
+    const listings = Array.isArray(data.listings) ? data.listings : [];
+    setListedToys(listings.map(mapApiToyToListing));
+
+    const ex =
+      typeof p.exchangesCompleted === "number" && Number.isFinite(p.exchangesCompleted)
+        ? Math.max(0, Math.floor(p.exchangesCompleted))
+        : 0;
+    setExchanged(Array.from({ length: ex }));
+
     setHydrated(true);
   }, [normalizedParam]);
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
   useEffect(() => {
     function onVisible() {
-      if (document.visibilityState === "visible") refresh();
+      if (document.visibilityState === "visible") void refresh();
     }
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
@@ -107,12 +127,16 @@ export default function PublicProfileClient({ username: usernameParam }) {
     );
   }
 
+  const showRating = exchangeParam && ratingTargetUserId && !isSelf;
+
   return (
     <ProfileView
       profile={profile}
       listedToys={listedToys}
       exchanged={exchanged}
       isSelf={isSelf}
+      pendingRatingExchangeId={showRating ? exchangeParam : null}
+      ratingTargetUserId={showRating ? ratingTargetUserId : null}
     />
   );
 }

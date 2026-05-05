@@ -28,13 +28,13 @@ export default function RequestDetailClient({ payload: initial }) {
     router.push("/toybox/requests");
   };
 
-  const onAccept = () => {
-    setRequestStatus(initial.id, "accepted");
+  const onAccept = async () => {
+    await setRequestStatus(initial.id, "accepted");
     router.push("/toybox/requests");
   };
 
-  const onCancel = () => {
-    setRequestStatus(initial.id, "declined");
+  const onCancel = async () => {
+    await setRequestStatus(initial.id, "declined");
     router.push("/toybox/requests");
   };
 
@@ -107,7 +107,7 @@ export default function RequestDetailClient({ payload: initial }) {
               Partner
             </h2>
             <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-blue-500/20 bg-slate-100 dark:border-blue-400/30">
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-primary/20 bg-slate-100 dark:border-[#4dd0e1]/35">
                 <Image
                   src={p.partnerDetail.avatarUrl}
                   alt=""
@@ -121,7 +121,7 @@ export default function RequestDetailClient({ payload: initial }) {
                   {p.partnerDetail.username ? (
                     <Link
                       href={`/toybox/profile/${p.partnerDetail.username}`}
-                      className="hover:text-blue-600 dark:hover:text-blue-400"
+                      className="hover:text-primary dark:hover:text-[#80deea]"
                     >
                       {p.partnerDetail.name}
                     </Link>
@@ -167,7 +167,7 @@ export default function RequestDetailClient({ payload: initial }) {
               <span className="text-sm text-slate-500 dark:text-slate-400">
                 Total offer value
               </span>
-              <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+              <span className="text-sm font-bold text-primary dark:text-[#80deea]">
                 {usd(p.totalOfferValueUsd)}
               </span>
             </div>
@@ -178,7 +178,7 @@ export default function RequestDetailClient({ payload: initial }) {
               <button
                 type="button"
                 onClick={onAccept}
-                className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-base font-bold text-white shadow-md transition-all hover:bg-blue-600/95 active:scale-[0.98]"
+                className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-bold text-white shadow-[0_8px_24px_rgba(0,196,217,0.25)] transition-all hover:bg-primary-hover active:scale-[0.98]"
               >
                 <span className="material-symbols-outlined text-xl">check_circle</span>
                 Accept request
@@ -223,7 +223,7 @@ function OfferToyCard({ toy, href, chevronRight }) {
       </div>
       <div className="min-w-0 flex-1">
         <p
-          className={`text-base font-bold text-slate-900 dark:text-slate-100 ${href ? "group-hover:text-blue-600 dark:group-hover:text-blue-400" : ""}`}
+          className={`text-base font-bold text-slate-900 dark:text-slate-100 ${href ? "group-hover:text-primary dark:group-hover:text-[#80deea]" : ""}`}
         >
           {toy.title}
         </p>
@@ -231,7 +231,7 @@ function OfferToyCard({ toy, href, chevronRight }) {
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Condition: {toy.conditionLabel}
           </p>
-          <p className="text-xs font-bold text-[#4c99e6] dark:text-[#60a5fa]">
+          <p className="text-xs font-bold text-primary dark:text-[#80deea]">
             Est. value: {usd(toy.estValueUsd)}
           </p>
         </div>

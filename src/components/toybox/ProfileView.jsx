@@ -2,10 +2,110 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { profileInitials } from "@/lib/profile";
 import { useChatWidget } from "@/contexts/ChatWidgetContext";
+import { apiFetch } from "@/lib/apiClient";
 
-const PRIMARY = "#4c99e6";
+const THEME_PRIMARY = "#00C4D9";
+
+function RatingAfterSwapPanel({ exchangeId, ratedUserId }) {
+  const [score, setScore] = useState(8);
+  const [busy, setBusy] = useState(false);
+  const [hint, setHint] = useState(null);
+  const [error, setError] = useState(null);
+
+  return (
+    <div className="mx-auto mt-6 w-full max-w-lg overflow-hidden rounded-3xl border border-[#B2EBF2]/90 bg-gradient-to-br from-white via-[#f0fdff] to-[#e0f7fa]/90 p-5 text-left shadow-[0_12px_40px_-12px_rgba(0,196,217,0.25)] ring-1 ring-[#00C4D9]/10 dark:border-[#006064]/40 dark:from-slate-900 dark:via-slate-900 dark:to-[#004d40]/30 dark:ring-[#00C4D9]/20 sm:p-6">
+      <div className="flex items-start gap-3">
+        <div
+          className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#00C4D9]/15 text-[#00838F] dark:bg-[#00C4D9]/20 dark:text-[#80deea]"
+          aria-hidden
+        >
+          <span className="material-symbols-outlined text-[22px] leading-none">star</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#00838F] dark:text-[#80deea]">
+            Rate this swap partner
+          </p>
+          <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            How was the exchange? Your score helps the community see who&apos;s reliable.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Score (1–10)</p>
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-500">Tap a number — 10 is flawless.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+            <button
+              key={n}
+              type="button"
+              disabled={busy || Boolean(hint)}
+              onClick={() => setScore(n)}
+              aria-pressed={score === n}
+              className={`flex h-10 min-w-[2.35rem] items-center justify-center rounded-xl border px-2.5 text-sm font-bold transition-all ${
+                score === n
+                  ? "scale-[1.02] border-[#00C4D9] bg-[#00C4D9] text-white shadow-[0_6px_20px_-4px_rgba(0,196,217,0.45)] dark:border-[#00C4D9]"
+                  : "border-slate-200/90 bg-white/90 text-slate-600 hover:border-[#80deea] hover:bg-[#f0fdff] dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-400 dark:hover:border-[#00C4D9]/40"
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {error ? (
+        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
+          {error}
+        </p>
+      ) : null}
+      {hint ? (
+        <p className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-3 py-2.5 text-sm font-semibold text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <span className="material-symbols-outlined text-lg text-emerald-600 dark:text-emerald-400">
+            check_circle
+          </span>
+          {hint}
+        </p>
+      ) : null}
+
+      {!hint ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setError(null);
+            setHint(null);
+            try {
+              const res = await apiFetch("/api/ratings", {
+                method: "POST",
+                body: JSON.stringify({
+                  exchangeId,
+                  ratedUserId,
+                  score: Number(score),
+                }),
+              });
+              const body = await res.json().catch(() => ({}));
+              if (!res.ok) {
+                setError(typeof body?.error === "string" ? body.error : "Could not save rating.");
+                return;
+              }
+              setHint("Thanks — rating saved.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+          className="mt-6 w-full rounded-2xl bg-[#00C4D9] py-3.5 text-sm font-bold text-white shadow-[0_12px_28px_rgba(0,196,217,0.35)] transition-colors hover:bg-[#00ACC1] active:scale-[0.99] disabled:opacity-55"
+        >
+          {busy ? "Saving…" : "Submit rating"}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 function ToyGridItem({ toy, isSelf }) {
   const img = toy.images?.[0] ?? toy.imageUrl;
@@ -42,7 +142,14 @@ function ToyGridItem({ toy, isSelf }) {
   );
 }
 
-export default function ProfileView({ profile, listedToys, exchanged, isSelf }) {
+export default function ProfileView({
+  profile,
+  listedToys,
+  exchanged,
+  isSelf,
+  pendingRatingExchangeId = null,
+  ratingTargetUserId = null,
+}) {
   const { openWidgetForPeerUsername } = useChatWidget();
 
   const coverUrl = profile.avatarUrl;
@@ -123,7 +230,7 @@ export default function ProfileView({ profile, listedToys, exchanged, isSelf }) 
                 unoptimized={isLocalAvatar}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-200 to-[color:var(--primary,#4c99e6)] text-4xl font-bold text-white dark:from-slate-600 dark:to-slate-700">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#80deea] to-[#00C4D9] text-4xl font-bold text-white dark:from-[#546e7a] dark:to-[#37474f]">
                 {profileInitials(profile.displayName)}
               </div>
             )}
@@ -137,7 +244,7 @@ export default function ProfileView({ profile, listedToys, exchanged, isSelf }) 
         <div className="mt-2 flex items-center gap-1 text-slate-500 dark:text-slate-400">
           <span
             className="material-symbols-outlined text-base"
-            style={{ color: PRIMARY }}
+            style={{ color: THEME_PRIMARY }}
           >
             location_on
           </span>
@@ -157,6 +264,13 @@ export default function ProfileView({ profile, listedToys, exchanged, isSelf }) 
             {profile.bio}
           </p>
         ) : null}
+
+        {pendingRatingExchangeId && ratingTargetUserId && !isSelf ? (
+          <RatingAfterSwapPanel
+            exchangeId={pendingRatingExchangeId}
+            ratedUserId={ratingTargetUserId}
+          />
+        ) : null}
       </div>
 
       {/* Stats */}
@@ -164,7 +278,7 @@ export default function ProfileView({ profile, listedToys, exchanged, isSelf }) 
         <div className="flex flex-1 flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4 text-center dark:border-slate-800 dark:bg-slate-900/50">
           <p
             className="text-2xl font-bold leading-tight"
-            style={{ color: PRIMARY }}
+            style={{ color: THEME_PRIMARY }}
           >
             {listedToys.length}
           </p>
@@ -175,7 +289,7 @@ export default function ProfileView({ profile, listedToys, exchanged, isSelf }) 
         <div className="flex flex-1 flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4 text-center dark:border-slate-800 dark:bg-slate-900/50">
           <p
             className="text-2xl font-bold leading-tight"
-            style={{ color: PRIMARY }}
+            style={{ color: THEME_PRIMARY }}
           >
             {exchanged.length}
           </p>
@@ -194,7 +308,7 @@ export default function ProfileView({ profile, listedToys, exchanged, isSelf }) 
           <Link
             href={viewAllHref}
             className="text-sm font-bold hover:underline"
-            style={{ color: PRIMARY }}
+            style={{ color: THEME_PRIMARY }}
           >
             View all
           </Link>
@@ -207,7 +321,7 @@ export default function ProfileView({ profile, listedToys, exchanged, isSelf }) 
               <Link
                 href="/toybox/my-toys/add"
                 className="mt-4 inline-block font-semibold hover:underline"
-                style={{ color: PRIMARY }}
+                style={{ color: THEME_PRIMARY }}
               >
                 Add a toy
               </Link>
