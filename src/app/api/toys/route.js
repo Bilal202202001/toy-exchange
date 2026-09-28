@@ -5,6 +5,7 @@ import { getAuthUser } from "@/lib/auth/session";
 import ToyListing from "@/models/ToyListing";
 import { serializeToy } from "@/lib/serializeToy";
 import { getFriendUserIds } from "@/lib/db/friends";
+import { resolveCategorySlug } from "@/lib/toyCategories";
 
 const OWNER_FIELDS =
   "name email username avatarUrl location reliabilityAvg exchangesCompleted";
@@ -35,7 +36,10 @@ export async function GET(request) {
       return NextResponse.json({ toys: [] });
     }
 
-    const items = await ToyListing.find({ owner: { $in: friendIds } })
+    const items = await ToyListing.find({
+      owner: { $in: friendIds },
+      listedForExchange: { $ne: false },
+    })
       .sort({ createdAt: -1 })
       .limit(80)
       .populate("owner", OWNER_FIELDS)
@@ -90,7 +94,9 @@ export async function POST(request) {
   }
 
   const title = typeof body.title === "string" ? body.title.trim() : "";
-  const category = typeof body.category === "string" ? body.category.trim() : "";
+  const category = resolveCategorySlug(
+    typeof body.category === "string" ? body.category : "",
+  );
   const imageUrls = Array.isArray(body.imageUrls)
     ? body.imageUrls.filter((u) => typeof u === "string" && u.length > 0)
     : [];
@@ -131,6 +137,11 @@ export async function POST(request) {
     typeof body.exchangeFor === "string"
       ? body.exchangeFor.trim().slice(0, 64)
       : "";
+
+  const listedForExchange =
+    typeof body.listedForExchange === "boolean"
+      ? body.listedForExchange
+      : true;
 
   const shareWithAll =
     typeof body.shareWithAll === "boolean" ? body.shareWithAll : true;
@@ -175,6 +186,7 @@ export async function POST(request) {
       description,
       estimatedWorth,
       exchangeFor,
+      listedForExchange,
       imageUrls,
       shareWithAll,
       contacts: shareWithAll ? [] : contactsClean,

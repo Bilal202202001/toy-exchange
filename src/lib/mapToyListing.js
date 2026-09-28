@@ -1,15 +1,9 @@
-const CATEGORY_LABELS = {
-  doll: "Doll",
-  puzzles: "Puzzles",
-  vehicle: "Vehicle",
-  educational: "Educational",
-  outdoor: "Outdoor",
-};
+import { CATEGORY_LABELS, resolveCategorySlug } from "@/lib/toyCategories";
 
 const EXCHANGE_LABELS = { ...CATEGORY_LABELS, any: "Any Category" };
 
 function catLabel(slug, map) {
-  const k = String(slug || "");
+  const k = resolveCategorySlug(slug);
   return map[k] || (k ? k : "—");
 }
 
@@ -39,8 +33,15 @@ export function mapApiToyToListing(toy) {
     { label: "Age group", value: t.ageRange || "—" },
     { label: "Estimated worth", value: t.estimatedWorth || "—" },
     {
+      label: "Listed for",
+      value: t.listedForExchange === false ? "My toys only" : "Exchange",
+    },
+    {
       label: "Open to exchange for",
-      value: catLabel(t.exchangeFor, EXCHANGE_LABELS),
+      value:
+        t.listedForExchange === false
+          ? "—"
+          : catLabel(t.exchangeFor, EXCHANGE_LABELS),
     },
     {
       label: "Visible to",
@@ -56,6 +57,8 @@ export function mapApiToyToListing(toy) {
   return {
     id: t.id,
     title: t.title,
+    category: resolveCategorySlug(t.category),
+    listedForExchange: t.listedForExchange !== false,
     imageUrl: images[0] || "",
     images,
     listedBy: oc.name || oc.username || "Member",

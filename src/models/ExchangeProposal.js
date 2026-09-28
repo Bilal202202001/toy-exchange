@@ -14,6 +14,12 @@ const exchangeProposalSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    requestType: {
+      type: String,
+      enum: ["exchange", "loan", "gift"],
+      default: "exchange",
+      index: true,
+    },
     requestedListing: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ToyListing",
@@ -22,7 +28,7 @@ const exchangeProposalSchema = new mongoose.Schema(
     offeredListing: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ToyListing",
-      required: true,
+      default: null,
     },
     message: {
       type: String,

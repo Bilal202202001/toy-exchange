@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/apiClient";
 import { isMongoId, mapApiToyToListing } from "@/lib/mapToyListing";
+import {
+  REQUEST_TYPES,
+  normalizeRequestType,
+  requestTypeLabel,
+} from "@/lib/requestTypes";
 
 function getDetail(details, ...labelHints) {
   if (!details?.length) return "";
@@ -61,6 +66,7 @@ export default function ExchangeProposalClient({ requestedListingId }) {
 
   const [listing, setListing] = useState(/** @type {any} */ null);
   const [listingError, setListingError] = useState(/** @type {string | null} */ null);
+  const [requestType, setRequestType] = useState("exchange");
   const [myToys, setMyToys] = useState([]);
   const [myToysReady, setMyToysReady] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
@@ -86,7 +92,14 @@ export default function ExchangeProposalClient({ requestedListingId }) {
           return;
         }
         const data = await res.json();
-        if (!cancelled) setListing(mapApiToyToListing(data.toy));
+        if (!cancelled) {
+          const mapped = mapApiToyToListing(data.toy);
+          if (mapped.listedForExchange === false) {
+            setListingError("This toy is not listed for exchange.");
+            return;
+          }
+          setListing(mapped);
+        }
       } catch {
         if (!cancelled) setListingError("Could not load listing.");
       }
@@ -167,9 +180,12 @@ export default function ExchangeProposalClient({ requestedListingId }) {
     : "—";
 
   const seller = (listedBy || "the seller").trim();
+  const type = normalizeRequestType(requestType);
+  const needsOffer = type === "exchange";
 
   const canSubmitMongo =
-    myToysReady && !!selectedToy && isMongoId(requestedListingId);
+    isMongoId(requestedListingId) &&
+    (!needsOffer || (myToysReady && !!selectedToy));
 
   const goBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -186,8 +202,9 @@ export default function ExchangeProposalClient({ requestedListingId }) {
     const res = await apiFetch("/api/exchanges", {
       method: "POST",
       body: JSON.stringify({
+        requestType: type,
         requestedToyListingId: requestedListingId,
-        offeredToyListingId: selectedToy?.id,
+        ...(needsOffer ? { offeredToyListingId: selectedToy?.id } : {}),
         message,
       }),
     });
@@ -197,7 +214,9 @@ export default function ExchangeProposalClient({ requestedListingId }) {
       setSubmitError(typeof json?.error === "string" ? json.error : "Request failed");
       return;
     }
-    router.push(`/toybox/request-sent?name=${encodeURIComponent(seller)}`);
+    router.push(
+      `/toybox/request-sent?name=${encodeURIComponent(seller)}&type=${encodeURIComponent(type)}`,
+    );
   };
 
   const isLocal =
@@ -219,13 +238,13 @@ export default function ExchangeProposalClient({ requestedListingId }) {
             </span>
           </button>
           <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl lg:text-3xl">
-            Exchange Proposal
+            {requestTypeLabel(type)} Request
           </h1>
         </div>
         <button
           type="button"
           className="shrink-0 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-          aria-label="Exchange proposal info"
+          aria-label="Request info"
         >
           <span className="material-symbols-outlined text-2xl leading-none">
             info
@@ -235,6 +254,48 @@ export default function ExchangeProposalClient({ requestedListingId }) {
 
       <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[minmax(0,1fr),minmax(280px,400px)] lg:items-start xl:max-w-[1200px] xl:gap-12">
         <div className="custom-scrollbar min-w-0 space-y-8">
+          <section className="space-y-3">
+            <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-primary-muted">
+              Request type
+            </p>
+            <div
+              role="group"
+              aria-label="Request type"
+              className="grid grid-cols-3 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+            >
+              {REQUEST_TYPES.map((option, index) => {
+                const active = type === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setRequestType(option.value)}
+                    className={`flex flex-col items-center gap-1 px-2 py-3 text-center transition-colors sm:px-3 ${
+                      index > 0
+                        ? "border-l border-slate-200 dark:border-slate-700"
+                        : ""
+                    } ${
+                      active
+                        ? "bg-primary text-white"
+                        : "bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[22px] leading-none">
+                      {option.icon}
+                    </span>
+                    <span className="text-xs font-bold sm:text-sm">
+                      {option.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="px-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              {REQUEST_TYPES.find((o) => o.value === type)?.hint}
+            </p>
+          </section>
+
           <section className="space-y-3">
             <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-primary-muted">
               You are requesting
@@ -275,6 +336,7 @@ export default function ExchangeProposalClient({ requestedListingId }) {
             </div>
           </section>
 
+          {needsOffer ? (
           <section className="space-y-4">
             <div className="flex items-center justify-between px-1">
               <div>
@@ -379,6 +441,13 @@ export default function ExchangeProposalClient({ requestedListingId }) {
               </Link>
             </div>
           </section>
+          ) : (
+            <section className="rounded-[1.25rem] border border-dashed border-slate-300 bg-white p-5 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+              {type === "loan"
+                ? "No toy offer needed — you’re asking to borrow this item."
+                : "No toy offer needed — you’re asking for this as a gift."}
+            </section>
+          )}
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-4 lg:z-10 lg:self-start">
@@ -406,14 +475,16 @@ export default function ExchangeProposalClient({ requestedListingId }) {
               </p>
             ) : null}
 
-            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-5 dark:border-slate-700">
-              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                Total Estimated Value
-              </span>
-              <span className="text-lg font-bold text-slate-900 dark:text-white">
-                {totalDisplay}
-              </span>
-            </div>
+            {needsOffer ? (
+              <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-5 dark:border-slate-700">
+                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                  Total Estimated Value
+                </span>
+                <span className="text-lg font-bold text-slate-900 dark:text-white">
+                  {totalDisplay}
+                </span>
+              </div>
+            ) : null}
 
             <button
               type="button"
@@ -421,7 +492,7 @@ export default function ExchangeProposalClient({ requestedListingId }) {
               onClick={submit}
               className="flex w-full items-center justify-center gap-3 rounded-2xl bg-primary py-4 font-bold text-white shadow-[0_12px_28px_rgba(0,196,217,0.35)] transition-all hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Request Exchange
+              Request {requestTypeLabel(type)}
               <span className="material-symbols-outlined leading-none">send</span>
             </button>
           </div>

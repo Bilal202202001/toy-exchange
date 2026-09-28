@@ -6,6 +6,10 @@ import Link from "next/link";
 import { ArrowUpRight, Inbox, MessageCircle, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useChatWidget } from "@/contexts/ChatWidgetContext";
+import {
+  completedWithVerb,
+  requestTypeLabel,
+} from "@/lib/requestTypes";
 
 function formatRequestDate(iso) {
   try {
@@ -91,7 +95,7 @@ function CompletedExchangeCard({ item }) {
               </span>
             </div>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Exchanged with{" "}
+              {completedWithVerb(item.requestType)}{" "}
               {rateHref ? (
                 <Link
                   href={rateHref}
@@ -203,7 +207,12 @@ function IncomingForToyCard({ req, index, setRequestStatus }) {
               <span className="truncate font-bold text-slate-800 dark:text-slate-100">
                 {req.toyTitle}
               </span>
-              {badgeEl}
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span className="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary bg-primary-soft dark:bg-teal-950/40 dark:text-[#80deea]">
+                  {requestTypeLabel(req.requestType)}
+                </span>
+                {badgeEl}
+              </div>
             </div>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Requested by {nameEl}
@@ -287,8 +296,8 @@ export default function RequestsClient() {
             Requests
           </h1>
           <p className="mt-2 max-w-xl text-sm text-slate-500 dark:text-slate-400 lg:text-base">
-            Track proposals and see completed swaps. Switch between active requests
-            and your exchange history.
+            Track proposals and see completed requests. Switch between active
+            requests and your history.
           </p>
         </div>
       </div>
@@ -330,7 +339,8 @@ export default function RequestsClient() {
         <div className="mt-8 space-y-4" role="tabpanel" aria-label="Completed exchanges">
           {completedExchanges.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-14 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
-              No completed exchanges yet. When a swap finishes, it will show up here.
+              No completed requests yet. When an exchange, loan, or gift finishes,
+              it will show up here.
             </p>
           ) : (
             <ul className="grid gap-4 sm:grid-cols-1 lg:grid-cols-1 xl:grid-cols-2 xl:gap-6">
@@ -459,7 +469,12 @@ export default function RequestsClient() {
                               {req.sellerLocation}
                             </p>
                           </div>
-                          <StatusBadge status={req.status} />
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary bg-primary-soft dark:bg-teal-950/40 dark:text-[#80deea]">
+                              {requestTypeLabel(req.requestType)}
+                            </span>
+                            <StatusBadge status={req.status} />
+                          </div>
                         </div>
                         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                           Sent {formatRequestDate(req.requestedAt)}

@@ -20,6 +20,8 @@ const toyListingSchema = new mongoose.Schema(
     description: { type: String, default: "", trim: true, maxlength: 4000 },
     estimatedWorth: { type: String, default: "", trim: true, maxlength: 64 },
     exchangeFor: { type: String, default: "", trim: true, maxlength: 64 },
+    /** When false, toy stays in My Toys / profile only — not the exchange catalog. */
+    listedForExchange: { type: Boolean, default: true, index: true },
     imageUrls: {
       type: [String],
       default: [],

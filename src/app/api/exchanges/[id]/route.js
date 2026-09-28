@@ -5,6 +5,7 @@ import { getAuthUser } from "@/lib/auth/session";
 import ExchangeProposal from "@/models/ExchangeProposal";
 import ToyListing from "@/models/ToyListing";
 import User from "@/models/User";
+import { normalizeRequestType } from "@/lib/requestTypes";
 
 const HANDOFF_VISIBILITY = { shareWithAll: true, contacts: [] };
 
@@ -63,6 +64,44 @@ export async function PATCH(request, context) {
     return NextResponse.json({ error: "Request already resolved" }, { status: 409 });
   }
 
+  const requestType = normalizeRequestType(locked.requestType);
+
+  // Gift / loan: transfer the requested toy to the proposer only.
+  if (requestType === "gift" || requestType === "loan") {
+    const rReq = await ToyListing.updateOne(
+      { _id: locked.requestedListing, owner: locked.recipient },
+      {
+        $set: {
+          owner: locked.proposer,
+          ...HANDOFF_VISIBILITY,
+          listedForExchange: requestType === "loan" ? false : true,
+        },
+      },
+    );
+
+    if (rReq.matchedCount === 1) {
+      await User.updateOne(
+        { _id: locked.proposer },
+        { $inc: { exchangesCompleted: 1 } },
+      );
+      await User.updateOne(
+        { _id: locked.recipient },
+        { $inc: { exchangesCompleted: 1 } },
+      );
+      return NextResponse.json({ ok: true, status: "accepted" });
+    }
+
+    await ExchangeProposal.updateOne({ _id: id }, { $set: { status: "pending" } });
+    return NextResponse.json(
+      {
+        error:
+          "Could not complete request — the listing may have changed or is missing.",
+      },
+      { status: 409 },
+    );
+  }
+
+  // Exchange: swap ownership of both toys.
   const reqSet = {
     owner: locked.proposer,
     ...HANDOFF_VISIBILITY,

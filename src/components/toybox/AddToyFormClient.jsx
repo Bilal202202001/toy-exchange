@@ -4,25 +4,18 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/apiClient";
+import { TOY_CATEGORIES } from "@/lib/toyCategories";
 
 const MAX_PHOTOS = 5;
 
 const CATEGORY_OPTIONS = [
   { value: "", label: "Select Category", disabled: true },
-  { value: "doll", label: "Doll" },
-  { value: "puzzles", label: "Puzzles" },
-  { value: "vehicle", label: "Vehicle" },
-  { value: "educational", label: "Educational" },
-  { value: "outdoor", label: "Outdoor" },
+  ...TOY_CATEGORIES,
 ];
 
 const EXCHANGE_OPTIONS = [
   { value: "", label: "Select Preferred Category", disabled: true },
-  { value: "doll", label: "Doll" },
-  { value: "puzzles", label: "Puzzles" },
-  { value: "vehicle", label: "Vehicle" },
-  { value: "educational", label: "Educational" },
-  { value: "outdoor", label: "Outdoor" },
+  ...TOY_CATEGORIES,
   { value: "any", label: "Any Category" },
 ];
 
@@ -47,6 +40,7 @@ export default function AddToyFormClient() {
   const photoId = useRef(0);
 
   const [title, setTitle] = useState("");
+  const [listedForExchange, setListedForExchange] = useState(true);
   const [category, setCategory] = useState("");
   const [condition, setCondition] = useState(8);
   const [ageRange, setAgeRange] = useState("");
@@ -177,7 +171,8 @@ export default function AddToyFormClient() {
         ageRange: ageRange.trim(),
         description: description.trim(),
         estimatedWorth: estimatedWorth.trim(),
-        exchangeFor,
+        exchangeFor: listedForExchange ? exchangeFor : "",
+        listedForExchange,
         shareWithAll,
         contacts: contactIds,
         imageUrls,
@@ -329,6 +324,53 @@ export default function AddToyFormClient() {
               className={fieldClass}
               required
             />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2 xl:col-span-3">
+            <span className={labelClass} id="add-toy-destination-label">
+              Add To
+            </span>
+            <div
+              role="group"
+              aria-labelledby="add-toy-destination-label"
+              className="grid grid-cols-2 overflow-hidden rounded-full border border-slate-900 bg-white dark:border-slate-100 dark:bg-slate-900"
+            >
+              <button
+                type="button"
+                aria-pressed={!listedForExchange}
+                onClick={() => setListedForExchange(false)}
+                className={`flex items-center justify-center gap-2 px-3 py-3 text-sm font-semibold transition-colors sm:px-4 ${
+                  !listedForExchange
+                    ? "bg-add-toy-primary text-slate-900"
+                    : "bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[20px] leading-none">
+                  inventory_2
+                </span>
+                <span>Just my toys</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={listedForExchange}
+                onClick={() => setListedForExchange(true)}
+                className={`flex items-center justify-center gap-2 border-l border-slate-900 px-3 py-3 text-sm font-semibold transition-colors sm:px-4 dark:border-slate-100 ${
+                  listedForExchange
+                    ? "bg-add-toy-primary text-slate-900"
+                    : "bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[20px] leading-none">
+                  storefront
+                </span>
+                <span>List for exchange</span>
+              </button>
+            </div>
+            <p className="px-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              {listedForExchange
+                ? "Your contacts will see it in their catalog and can request it."
+                : "Only you will see it in your toys. Contacts can still view it on your profile."}
+            </p>
           </div>
 
           <div className="space-y-3 sm:col-span-2 xl:col-span-3">
@@ -519,29 +561,35 @@ export default function AddToyFormClient() {
             </div>
           </div>
 
-          <div className="space-y-3 sm:col-span-1 xl:col-span-2">
-            <label className={labelClass} htmlFor="add-toy-exchange">
-              Open to Exchange For...
-            </label>
-            <div className="relative">
-              <select
-                id="add-toy-exchange"
-                name="exchangeFor"
-                value={exchangeFor}
-                onChange={(e) => setExchangeFor(e.target.value)}
-                className={selectClass}
-              >
-                {EXCHANGE_OPTIONS.map((o) => (
-                  <option key={o.value || "ex-empty"} value={o.value} disabled={o.disabled}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
-                <span className="material-symbols-outlined">expand_more</span>
-              </span>
+          {listedForExchange ? (
+            <div className="space-y-3 sm:col-span-1 xl:col-span-2">
+              <label className={labelClass} htmlFor="add-toy-exchange">
+                Open to Exchange For...
+              </label>
+              <div className="relative">
+                <select
+                  id="add-toy-exchange"
+                  name="exchangeFor"
+                  value={exchangeFor}
+                  onChange={(e) => setExchangeFor(e.target.value)}
+                  className={selectClass}
+                >
+                  {EXCHANGE_OPTIONS.map((o) => (
+                    <option
+                      key={o.value || "ex-empty"}
+                      value={o.value}
+                      disabled={o.disabled}
+                    >
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                  <span className="material-symbols-outlined">expand_more</span>
+                </span>
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
 
         <div className="w-full min-w-0 pt-2 sm:pt-4">

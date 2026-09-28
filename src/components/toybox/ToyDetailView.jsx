@@ -213,7 +213,10 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
                 Expected Exchange
               </h2>
               <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                {exchangeFor || "Open to discussing fair swaps in this category."}
+                {listing.listedForExchange === false
+                  ? "This toy is in their collection only — not open for exchange requests."
+                  : exchangeFor ||
+                    "Open to discussing fair swaps in this category."}
               </p>
             </div>
 
@@ -282,9 +285,9 @@ export default function ToyDetailView({ listing, hideRequest = false }) {
               className="flex w-full cursor-pointer items-center justify-between rounded-2xl bg-primary p-6 text-left text-white shadow-[0_12px_28px_rgba(0,196,217,0.35)] transition-transform duration-200 hover:bg-primary-hover active:scale-[0.98]"
             >
               <div className="flex flex-col">
-                <span className="text-sm font-bold">Request Exchange</span>
+                <span className="text-sm font-bold">Send Request</span>
                 <span className="text-[10px] font-extrabold uppercase tracking-widest opacity-80">
-                  Instant Proposal
+                  Exchange · Loan · Gift
                 </span>
               </div>
               <span className="material-symbols-outlined text-2xl leading-none">

@@ -5,6 +5,7 @@ import { getAuthUser } from "@/lib/auth/session";
 import ToyListing from "@/models/ToyListing";
 import ExchangeProposal from "@/models/ExchangeProposal";
 import { areFriends } from "@/lib/db/friends";
+import { normalizeRequestType } from "@/lib/requestTypes";
 
 const POP_USER =
   "name username avatarUrl location reliabilityAvg exchangesCompleted";
@@ -35,6 +36,10 @@ function proposerIdOf(ex) {
   return String(p);
 }
 
+function requestTypeOf(doc) {
+  return normalizeRequestType(doc.requestType);
+}
+
 function serializeIncoming(doc, rq, offered, proposerDoc) {
   const p = proposerDoc;
   const r = rq;
@@ -45,6 +50,7 @@ function serializeIncoming(doc, rq, offered, proposerDoc) {
 
   return {
     id: doc._id.toString(),
+    requestType: requestTypeOf(doc),
     toyId: r._id.toString(),
     toyTitle: r.title,
     imageUrl: r.imageUrls?.[0] ?? diceUrl(p.username),
@@ -64,6 +70,7 @@ function serializeOutgoing(doc, rq, _offered, sellerDoc) {
 
   return {
     id: doc._id.toString(),
+    requestType: requestTypeOf(doc),
     toyId: r._id.toString(),
     toyTitle: r.title,
     imageUrl: r.imageUrls?.[0] ?? diceUrl(s.username),
@@ -82,6 +89,7 @@ function serializeCompletedRow(ex, mine) {
   const pd = pid === mine ? ex.recipient : ex.proposer;
   return {
     id: ex._id.toString(),
+    requestType: requestTypeOf(ex),
     toyId: rq._id.toString(),
     toyTitle: rq.title,
     imageUrl: rq.imageUrls?.[0] ?? diceUrl(pd.username),
@@ -107,85 +115,57 @@ export async function GET(request) {
 
   const rowsIn = await ExchangeProposal.find({ recipient: me })
     .sort({ createdAt: -1 })
-
     .populate(pop)
-
     .lean();
 
   const incoming = [];
 
   for (const doc of rowsIn) {
-
     const rq = doc.requestedListing;
-
     const offered = doc.offeredListing;
-
     const pd = doc.proposer;
-
-    if (!rq || !offered || !pd) continue;
-
+    if (!rq || !pd) continue;
+    if (requestTypeOf(doc) === "exchange" && !offered) continue;
     incoming.push(serializeIncoming(doc, rq, offered, pd));
-
   }
 
   const rowsOut = await ExchangeProposal.find({ proposer: me })
-
     .sort({ createdAt: -1 })
-
     .populate(pop)
-
     .lean();
 
   const outgoing = [];
 
   for (const doc of rowsOut) {
-
     const rq = doc.requestedListing;
-
     const offered = doc.offeredListing;
-
     const sd = doc.recipient;
-
-    if (!rq || !offered || !sd) continue;
-
+    if (!rq || !sd) continue;
+    if (requestTypeOf(doc) === "exchange" && !offered) continue;
     outgoing.push(serializeOutgoing(doc, rq, offered, sd));
-
   }
 
   const done = await ExchangeProposal.find({
-
     status: "accepted",
-
     $or: [{ recipient: me }, { proposer: me }],
-
   })
-
     .sort({ updatedAt: -1 })
-
     .populate(pop)
-
     .lean();
 
   const completed = [];
 
   for (const ex of done) {
-
     const rq = ex.requestedListing;
-
-    const off = ex.offeredListing;
-
-    if (!rq || !off) continue;
-
+    if (!rq) continue;
+    if (requestTypeOf(ex) === "exchange" && !ex.offeredListing) continue;
     completed.push(serializeCompletedRow(ex, mine));
-
   }
 
   return NextResponse.json({ incoming, outgoing, completed });
-
 }
 
 export async function POST(request) {
-
   await connectDB();
 
   const auth = await getAuthUser(request);
@@ -195,63 +175,60 @@ export async function POST(request) {
   let body;
 
   try {
-
     body = await request.json();
-
   } catch {
-
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-
   }
 
+  const requestType = normalizeRequestType(body.requestType);
+
   const requestedToyId =
-
     typeof body.requestedToyListingId === "string"
-
       ? body.requestedToyListingId
-
       : "";
 
   const offeredToyId =
-
     typeof body.offeredToyListingId === "string"
-
       ? body.offeredToyListingId
-
       : "";
 
   const message =
-
     typeof body.message === "string"
-
       ? body.message.trim().slice(0, 2000)
-
       : "";
 
-  if (
-
-    !mongoose.isValidObjectId(requestedToyId) ||
-
-    !mongoose.isValidObjectId(offeredToyId)
-
-  ) {
-
+  if (!mongoose.isValidObjectId(requestedToyId)) {
     return NextResponse.json({ error: "Invalid listing ids" }, { status: 400 });
+  }
 
+  if (requestType === "exchange" && !mongoose.isValidObjectId(offeredToyId)) {
+    return NextResponse.json(
+      { error: "Choose a toy to offer for an exchange" },
+      { status: 400 },
+    );
   }
 
   const requested = await ToyListing.findById(requestedToyId)
-
-    .select("owner")
-
+    .select("owner listedForExchange")
     .lean();
 
-  const offered = await ToyListing.findById(offeredToyId).select("owner").lean();
-
-  if (!requested || !offered) {
-
+  if (!requested) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+  }
 
+  if (requested.listedForExchange === false) {
+    return NextResponse.json(
+      { error: "This toy is not listed for exchange" },
+      { status: 400 },
+    );
+  }
+
+  let offered = null;
+  if (requestType === "exchange") {
+    offered = await ToyListing.findById(offeredToyId).select("owner").lean();
+    if (!offered) {
+      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+    }
   }
 
   const recipientId = requested.owner;
@@ -259,49 +236,34 @@ export async function POST(request) {
   const proposerId = auth.user._id;
 
   if (String(recipientId) === String(proposerId)) {
-
     return NextResponse.json({ error: "Cannot request your own listing" }, {
-
       status: 400,
-
     });
-
   }
 
-  if (String(offered.owner) !== String(proposerId)) {
-
+  if (
+    requestType === "exchange" &&
+    String(offered.owner) !== String(proposerId)
+  ) {
     return NextResponse.json({ error: "Offered toy must belong to you" }, {
-
       status: 403,
-
     });
-
   }
 
   if (!(await areFriends(proposerId, recipientId))) {
-
     return NextResponse.json(
-
-      { error: "You can only exchange with accepted friends" },
-
+      { error: "You can only send requests to accepted friends" },
       { status: 403 },
-
     );
-
   }
 
   const created = await ExchangeProposal.create({
-
     proposer: proposerId,
-
     recipient: recipientId,
-
+    requestType,
     requestedListing: requestedToyId,
-
-    offeredListing: offeredToyId,
-
+    offeredListing: requestType === "exchange" ? offeredToyId : null,
     message,
-
   });
 
   await created.populate(populateBlocks());
@@ -314,17 +276,16 @@ export async function POST(request) {
 
   const pd = d.proposer;
 
-  if (!rq || !offeredPop || !pd)
-
+  if (!rq || !pd) {
     return NextResponse.json({ error: "Could not complete" }, { status: 500 });
+  }
+
+  if (requestType === "exchange" && !offeredPop) {
+    return NextResponse.json({ error: "Could not complete" }, { status: 500 });
+  }
 
   return NextResponse.json(
-
     { exchange: serializeIncoming(d, rq, offeredPop, pd) },
-
     { status: 201 },
-
   );
-
 }
-

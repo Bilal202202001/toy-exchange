@@ -60,6 +60,7 @@ export function serializeToy(doc) {
     description: doc.description,
     estimatedWorth: doc.estimatedWorth,
     exchangeFor: doc.exchangeFor,
+    listedForExchange: doc.listedForExchange !== false,
     imageUrls: doc.imageUrls,
     shareWithAll: doc.shareWithAll,
     contacts: Array.isArray(contactsRaw)

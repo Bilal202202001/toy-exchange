@@ -133,7 +133,8 @@ export default function ToyDetailClientGate({ id }) {
 
   const hideRequest =
     Boolean(listing?.ownerUserId && me?.id && listing.ownerUserId === me.id) ||
-    isMyListingId(id);
+    isMyListingId(id) ||
+    listing?.listedForExchange === false;
 
   return (
     <ToyDetailView listing={listing} hideRequest={hideRequest} />

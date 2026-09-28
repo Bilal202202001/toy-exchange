@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useChatWidget } from "@/contexts/ChatWidgetContext";
+import { requestTypeLabel } from "@/lib/requestTypes";
 
 function usd(amount) {
   return new Intl.NumberFormat("en-US", {
@@ -56,10 +57,10 @@ export default function RequestDetailClient({ payload: initial }) {
           </button>
           <div>
             <h1 className="text-xl font-bold leading-tight tracking-tight sm:text-2xl lg:text-3xl">
-              Request Details
+              {requestTypeLabel(p.requestType)} Request
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-              Review toys on the table and your partner&apos;s reliability before accepting.
+              Review the details and your partner&apos;s reliability before accepting.
             </p>
           </div>
         </div>
@@ -77,22 +78,32 @@ export default function RequestDetailClient({ payload: initial }) {
 
       <div className="grid gap-8 lg:gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(280px,400px)] xl:items-start">
         <div className="min-w-0 space-y-8">
-          {/* Partner offered */}
-          <section>
-            <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-500 opacity-70 dark:text-slate-400">
-              Partner offered toys
-            </h2>
-            <div className="flex flex-col gap-3">
-              {p.partnerOfferedToys.map((toy) => (
-                <OfferToyCard key={toy.toyId} toy={toy} />
-              ))}
-            </div>
-          </section>
+          {Array.isArray(p.partnerOfferedToys) &&
+          p.partnerOfferedToys.length > 0 ? (
+            <section>
+              <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-500 opacity-70 dark:text-slate-400">
+                Partner offered toys
+              </h2>
+              <div className="flex flex-col gap-3">
+                {p.partnerOfferedToys.map((toy) => (
+                  <OfferToyCard key={toy.toyId} toy={toy} />
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-5 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
+              {p.requestType === "loan"
+                ? "Loan request — no toy offered in return."
+                : p.requestType === "gift"
+                  ? "Gift request — no toy offered in return."
+                  : "No offered toys on this request."}
+            </section>
+          )}
 
-          {/* Your offer */}
+          {/* Requested toy (yours if incoming) */}
           <section>
             <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-500 opacity-70 dark:text-slate-400">
-              Your offer
+              {p.requestType === "exchange" ? "Your offer" : "Requested toy"}
             </h2>
             <OfferToyCard
               toy={p.yourOfferToy}
@@ -165,10 +176,14 @@ export default function RequestDetailClient({ payload: initial }) {
             </div>
             <div className="mt-2 flex items-center justify-between gap-4 border-t border-slate-200/80 pt-2 dark:border-slate-700">
               <span className="text-sm text-slate-500 dark:text-slate-400">
-                Total offer value
+                {p.requestType === "exchange"
+                  ? "Total offer value"
+                  : "Request type"}
               </span>
               <span className="text-sm font-bold text-primary dark:text-[#80deea]">
-                {usd(p.totalOfferValueUsd)}
+                {p.requestType === "exchange"
+                  ? usd(p.totalOfferValueUsd)
+                  : requestTypeLabel(p.requestType)}
               </span>
             </div>
           </div>

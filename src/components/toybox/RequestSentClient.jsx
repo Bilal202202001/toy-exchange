@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Spline_Sans } from "next/font/google";
+import { requestSentCopy } from "@/lib/requestTypes";
 
 const splineSans = Spline_Sans({
   subsets: ["latin"],
@@ -13,6 +14,7 @@ export default function RequestSentClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sellerRaw = searchParams.get("name")?.trim() || "Alex";
+  const typeRaw = searchParams.get("type")?.trim() || "exchange";
 
   const close = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -63,7 +65,7 @@ export default function RequestSentClient() {
             Request Sent!
           </h1>
           <p className="text-lg leading-relaxed text-slate-600 dark:text-slate-400">
-            Your exchange proposal has been sent to{" "}
+            {requestSentCopy(typeRaw)}{" "}
             <span className="font-semibold text-slate-900 dark:text-slate-100">
               {sellerRaw}
             </span>
